@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    ports:
+      - "27017:27017"
+
+  bot:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      MONGO_URI: "mongodb://mongo:27017"
+    volumes:
+      - ../config:/app/config:ro
+      - ${TRAVA_PATH:-../../trava}:/opt/data/trava
+    depends_on:
+      - mongo
+
+volumes:
+  mongo_data:
