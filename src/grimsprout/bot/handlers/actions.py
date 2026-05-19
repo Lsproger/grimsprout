@@ -45,7 +45,7 @@ async def _resolve_plant_id(
 ) -> str | None:
     arg = (command.args or "").strip()
     if arg:
-        path = plant_repo.find(cfg.repository.path, arg)
+        path = plant_repo.find(cfg.repository.require_local_path(), arg)
         if path is None:
             await message.answer(
                 f"Не нашёл растения по запросу: <code>{arg}</code>. Попробуй /plants."
@@ -77,7 +77,7 @@ async def _apply_action(
         return
 
     field, text = ACTIONS[action]
-    path = cfg.repository.path / f"{plant_id}.md"
+    path = cfg.repository.require_local_path() / f"{plant_id}.md"
     if not path.exists():
         await message.answer(f"Файл карточки <code>{plant_id}.md</code> не найден.")
         return
@@ -86,9 +86,9 @@ async def _apply_action(
     try:
         md_parser.update_yaml(path, {field: today.isoformat()})
         changelog.append_entry(path, today, text)
-        git_service.add(cfg.repository.path, [path])
+        git_service.add(cfg.repository.require_local_path(), [path])
         sha = git_service.commit(
-            cfg.repository.path,
+            cfg.repository.require_local_path(),
             f"chore(auto): {action} {plant_id}\n\n{text}\nGrimSprout: tg_id={user.tg_id}",
         )
     except DirtyRepoError as exc:

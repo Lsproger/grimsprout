@@ -18,11 +18,39 @@ class TelegramConfig(BaseModel):
 
 
 class RepositoryConfig(BaseModel):
-    path: Path
+    """Repository config.
+
+    ``path`` may be either a local filesystem path or a git URL
+    (SSH or HTTPS). When a URL is given, the repo is cloned into
+    ``clone_dir/<repo-name>`` on bootstrap and all bot operations target
+    the dedicated ``work_branch`` (never ``git_branch`` directly).
+
+    ``local_path`` is populated at runtime by
+    :func:`grimsprout.services.repo_bootstrap.ensure_workdir` and exposes
+    the resolved on-disk working tree.
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    path: str
     images_dir: str = "images"
     template_file: str = "_template.md"
     git_remote: str = "origin"
     git_branch: str = "master"
+    work_branch: str = "grimsprout/auto"
+    clone_dir: Path = Path("var/repo")
+    https_token_env: str = "GIT_HTTPS_TOKEN"
+    github_token_env: str = "GITHUB_TOKEN"
+
+    # Populated at runtime by repo_bootstrap.ensure_workdir.
+    local_path: Path | None = None
+
+    def require_local_path(self) -> Path:
+        if self.local_path is None:
+            raise RuntimeError(
+                "repository.local_path is not set; call repo_bootstrap.ensure_workdir() first"
+            )
+        return self.local_path
 
 
 class MongoConfig(BaseModel):
@@ -32,8 +60,8 @@ class MongoConfig(BaseModel):
 
 class LLMConfig(BaseModel):
     provider: Literal["ollama"] = "ollama"
-    base_url: str = "http://localhost:11434"
-    model: str = "llama3"
+    base_url: str = "http://openwebui.lab.kekpuk.top:11434"
+    model: str = "gemma3:4b"
     temperature: float = 0.1
     timeout_sec: int = 30
     system_prompt_file: Path

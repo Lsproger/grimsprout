@@ -13,11 +13,17 @@ telegram:
   parse_mode: "HTML"
 
 repository:
+  # Either a local path or a git URL (git@host:owner/repo.git, https://..., ssh://...).
+  # If a URL is given, the repo is cloned into clone_dir/<repo-name> on startup.
   path: "/opt/data/trava"
   images_dir: "images"
   template_file: "_template.md"
   git_remote: "origin"
-  git_branch: "master"
+  git_branch: "master"           # base branch; bot never writes to it directly
+  work_branch: "grimsprout/auto"  # bot-only branch; all auto-commits land here
+  clone_dir: "var/repo"           # relative to project root; used when path is a URL
+  https_token_env: "GIT_HTTPS_TOKEN"  # env var for HTTPS clone/push auth
+  github_token_env: "GITHUB_TOKEN"    # env var for /pr (GitHub API)
 
 mongo:
   uri_env: "MONGO_URI"

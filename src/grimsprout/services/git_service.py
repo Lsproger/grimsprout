@@ -90,4 +90,21 @@ def _has_initial_commit_pending(repo: git.Repo) -> bool:
 
 
 def push(repo_path: Path, remote: str, branch: str) -> None:
-    raise NotImplementedError("phase-5")
+    """Push ``branch`` to ``remote`` with upstream tracking.
+
+    Only the bot's ``work_branch`` should ever be passed here — never the
+    base branch. Caller is responsible for that policy.
+    """
+    _wait_lock(repo_path)
+    repo = _open(repo_path)
+    try:
+        remote_obj = repo.remote(remote)
+    except ValueError as exc:
+        raise GitError(f"remote '{remote}' not configured") from exc
+    try:
+        results = remote_obj.push(refspec=f"{branch}:{branch}", set_upstream=True)
+    except git.GitCommandError as exc:
+        raise GitError(f"git push failed: {exc.stderr or exc}") from exc
+    for r in results:
+        if r.flags & r.ERROR:
+            raise GitError(f"push rejected for {r.local_ref}: {r.summary}")

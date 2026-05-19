@@ -21,7 +21,7 @@ router = Router(name="plants")
 async def cmd_plants(
     message: Message, cfg: AppConfig, user: User, **_: object
 ) -> None:
-    items = plant_repo.list_plants(cfg.repository.path)
+    items = plant_repo.list_plants(cfg.repository.require_local_path())
     if not items:
         await message.answer("В склепе пока ни одного растения. Используй /new.")
         return

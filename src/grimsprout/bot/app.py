@@ -10,11 +10,12 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 from loguru import logger
 
-from grimsprout.bot.handlers import actions, admin, plants, start
+from grimsprout.bot.handlers import actions, admin, git as git_handlers, plants, start
 from grimsprout.bot.middlewares.auth import AuthMiddleware
 from grimsprout.config import load_config, load_env
 from grimsprout.db.client import get_db, init_indexes
 from grimsprout.db.repositories import users as users_repo
+from grimsprout.services.repo_bootstrap import ensure_workdir
 from grimsprout.utils.logging import setup_logging
 
 
@@ -26,6 +27,8 @@ BOT_COMMANDS = [
     BotCommand(command="water", description="Зафиксировать полив"),
     BotCommand(command="fertilize", description="Зафиксировать удобрение"),
     BotCommand(command="repot", description="Зафиксировать пересадку"),
+    BotCommand(command="push", description="Отправить ветку бота в remote"),
+    BotCommand(command="pr", description="Открыть PR в базовую ветку"),
 ]
 
 
@@ -33,6 +36,8 @@ async def run() -> None:
     cfg = load_config()
     env = load_env()
     setup_logging(cfg.logging.level, cfg.logging.json_format)
+
+    ensure_workdir(cfg)
 
     token = os.environ.get(cfg.telegram.token_env) or env.BOT_TOKEN
     if not token:
@@ -62,6 +67,7 @@ async def run() -> None:
     plants.register(dp)
     actions.register(dp)
     admin.register(dp)
+    git_handlers.register(dp)
 
     me = await bot.get_me()
     logger.info("bot online: @{u} (id={id})", u=me.username, id=me.id)

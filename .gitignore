@@ -13,3 +13,6 @@ __pycache__/
 # Local
 .DS_Store
 .copilot/
+
+# Runtime data (cloned repos, etc.)
+var/
