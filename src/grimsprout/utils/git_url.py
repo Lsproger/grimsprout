@@ -15,7 +15,6 @@ from dataclasses import dataclass
 from typing import Literal
 from urllib.parse import urlparse
 
-
 Scheme = Literal["ssh", "https"]
 
 

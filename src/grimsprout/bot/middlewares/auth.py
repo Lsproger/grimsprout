@@ -8,7 +8,8 @@ Behavior:
 from __future__ import annotations
 
 import html
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, TelegramObject
@@ -17,7 +18,6 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from grimsprout.db.repositories import users as users_repo
 from grimsprout.services import audit as audit_svc
-
 
 DENY_MESSAGE = "🪦 Склеп заперт. Доступ запрещён."
 

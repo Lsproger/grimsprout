@@ -10,14 +10,14 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 from loguru import logger
 
-from grimsprout.bot.handlers import actions, admin, git as git_handlers, plants, start
+from grimsprout.bot.handlers import actions, admin, plants, start
+from grimsprout.bot.handlers import git as git_handlers
 from grimsprout.bot.middlewares.auth import AuthMiddleware
 from grimsprout.config import load_config, load_env
 from grimsprout.db.client import get_db, init_indexes
 from grimsprout.db.repositories import users as users_repo
 from grimsprout.services.repo_bootstrap import ensure_workdir
 from grimsprout.utils.logging import setup_logging
-
 
 BOT_COMMANDS = [
     BotCommand(command="start", description="Приветствие"),

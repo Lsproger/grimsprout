@@ -1,0 +1,65 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grimsprout"
+version = "0.0.0"
+description = "Telegram bot that maintains the trava plant-care repository."
+requires-python = ">=3.11"
+dynamic = ["dependencies"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+pythonpath = ["src"]
+markers = [
+    "mongo: integration tests that require a running MongoDB instance (set MONGO_TEST_URI)",
+]
+
+[tool.coverage.run]
+source = ["src/grimsprout"]
+branch = true
+omit = [
+    "src/grimsprout/__main__.py",
+    "src/grimsprout/bot/handlers/*",
+    "src/grimsprout/bot/middlewares/*",
+    "src/grimsprout/bot/app.py",
+    "src/grimsprout/services/photo_analyzer.py",
+    "src/grimsprout/services/scheduler_service.py",
+    "src/grimsprout/services/github_pr.py",
+    "src/grimsprout/services/repo_bootstrap.py",
+    "src/grimsprout/services/llm/*",
+    "src/grimsprout/core/photo_storage.py",
+    "src/grimsprout/utils/logging.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 110
+extend-exclude = ["var", ".venv", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = [
+    "B008",  # do not perform function call in argument defaults (FastAPI/aiogram style)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["B011"]
+# Long unicode-escape regex literal; readability suffers more from wrapping.
+"src/grimsprout/core/changelog.py" = ["E501"]

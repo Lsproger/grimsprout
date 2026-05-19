@@ -12,6 +12,7 @@ from aiogram import Dispatcher, Router
 from aiogram.filters import Command
 from aiogram.types import Message
 from loguru import logger
+from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from grimsprout.config import AppConfig
 from grimsprout.db.models import User
@@ -19,8 +20,6 @@ from grimsprout.services import audit as audit_svc
 from grimsprout.services import git_service, github_pr
 from grimsprout.services.auth_service import requires_role
 from grimsprout.utils.errors import GrimSproutError
-from motor.motor_asyncio import AsyncIOMotorDatabase
-
 
 router = Router(name="git")
 

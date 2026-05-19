@@ -6,7 +6,6 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 Role = Literal["admin", "editor", "publisher", "viewer"]
 ScheduleKind = Literal["water", "fertilize", "repot"]
 

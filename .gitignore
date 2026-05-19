@@ -7,6 +7,12 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 
+# Tests / coverage
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
 # Env / config
 .env
 

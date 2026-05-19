@@ -1,7 +1,7 @@
 """Date helpers."""
 from __future__ import annotations
 
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 
 def today_iso() -> str:
@@ -9,4 +9,4 @@ def today_iso() -> str:
 
 
 def utcnow() -> datetime:
-    return datetime.now(tz=timezone.utc)
+    return datetime.now(tz=UTC)

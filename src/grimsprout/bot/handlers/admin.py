@@ -12,6 +12,7 @@ from grimsprout.db.models import Role, User
 from grimsprout.db.repositories import users as users_repo
 from grimsprout.services import audit as audit_svc
 from grimsprout.services.auth_service import VALID_ROLES, requires_role
+
 router = Router(name="admin")
 
 
