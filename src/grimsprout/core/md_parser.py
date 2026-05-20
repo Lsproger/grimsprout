@@ -3,6 +3,7 @@
 Provides atomic write and partial YAML update. Field order in the YAML block is
 preserved as much as python-frontmatter / PyYAML allow (we pass sort_keys=False).
 """
+
 from __future__ import annotations
 
 import os

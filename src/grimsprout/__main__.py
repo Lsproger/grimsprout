@@ -1,4 +1,5 @@
 """Entry point: python -m grimsprout."""
+
 from __future__ import annotations
 
 import asyncio

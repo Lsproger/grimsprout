@@ -4,6 +4,7 @@ TODO(phase-3):
 - parse(raw_json: str) -> Intent
 - one retry on validation failure (caller responsibility)
 """
+
 from __future__ import annotations
 
 from typing import Literal

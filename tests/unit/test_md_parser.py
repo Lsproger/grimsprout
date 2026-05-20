@@ -1,4 +1,5 @@
 """Tests for grimsprout.core.md_parser."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -16,14 +17,7 @@ def test_read_roundtrip_preserves_keys_and_body(tmp_path: Path) -> None:
     src = tmp_path / "card.md"
     _write(
         src,
-        "---\n"
-        "id: areca_01\n"
-        "common_name: Пальма\n"
-        "tags:\n"
-        "  - a\n"
-        "  - b\n"
-        "---\n"
-        "# Заголовок\n\nТекст.\n",
+        "---\nid: areca_01\ncommon_name: Пальма\ntags:\n  - a\n  - b\n---\n# Заголовок\n\nТекст.\n",
     )
 
     yaml_data, body = md_parser.read(src)
@@ -63,12 +57,7 @@ def test_update_yaml_updates_existing_inplace(tmp_path: Path) -> None:
     src = tmp_path / "card.md"
     _write(
         src,
-        "---\n"
-        "id: x\n"
-        "status: alive\n"
-        "common_name: old\n"
-        "---\n"
-        "# body\n",
+        "---\nid: x\nstatus: alive\ncommon_name: old\n---\n# body\n",
     )
 
     md_parser.update_yaml(src, {"status": "dead"})

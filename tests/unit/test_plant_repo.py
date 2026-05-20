@@ -1,4 +1,5 @@
 """Tests for grimsprout.core.plant_repo."""
+
 from __future__ import annotations
 
 from pathlib import Path

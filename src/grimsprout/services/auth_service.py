@@ -1,4 +1,5 @@
 """AuthService helpers: role rank, requires_role decorator."""
+
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable

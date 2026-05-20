@@ -1,4 +1,5 @@
 """Logging setup (loguru) + stdlib intercept (aiogram, apscheduler, motor)."""
+
 from __future__ import annotations
 
 import logging

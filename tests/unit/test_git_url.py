@@ -1,4 +1,5 @@
 """Tests for grimsprout.utils.git_url."""
+
 from __future__ import annotations
 
 import pytest

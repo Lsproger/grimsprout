@@ -1,4 +1,5 @@
 """Configuration loader: YAML + .env via pydantic-settings."""
+
 from __future__ import annotations
 
 import os
@@ -47,9 +48,7 @@ class RepositoryConfig(BaseModel):
 
     def require_local_path(self) -> Path:
         if self.local_path is None:
-            raise RuntimeError(
-                "repository.local_path is not set; call repo_bootstrap.ensure_workdir() first"
-            )
+            raise RuntimeError("repository.local_path is not set; call repo_bootstrap.ensure_workdir() first")
         return self.local_path
 
 

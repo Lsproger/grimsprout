@@ -4,6 +4,7 @@ Both are restricted to ``publisher``/``admin`` per docs/spec/07-roles-and-auth.m
 They always operate on the bot's ``work_branch``; ``git_branch`` (base) is
 never written to directly.
 """
+
 from __future__ import annotations
 
 import os
@@ -55,9 +56,7 @@ async def cmd_push(
         action="push",
         payload={"branch": branch, "remote": remote},
     )
-    await message.answer(
-        f"📤 Ветка <code>{branch}</code> отправлена в <code>{remote}</code>."
-    )
+    await message.answer(f"📤 Ветка <code>{branch}</code> отправлена в <code>{remote}</code>.")
 
 
 @router.message(Command("pr"))

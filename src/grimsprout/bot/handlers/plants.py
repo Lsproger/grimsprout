@@ -1,4 +1,5 @@
 """/plants — list plants and select current via inline keyboard."""
+
 from __future__ import annotations
 
 from aiogram import Dispatcher, F, Router
@@ -19,9 +20,7 @@ router = Router(name="plants")
 
 @router.message(Command("plants"))
 @requires_role("viewer")
-async def cmd_plants(
-    message: Message, cfg: AppConfig, user: User, **_: object
-) -> None:
+async def cmd_plants(message: Message, cfg: AppConfig, user: User, **_: object) -> None:
     items = plant_repo.list_plants(cfg.repository.require_local_path())
     if not items:
         await message.answer("В склепе пока ни одного растения. Используй /new.")
@@ -46,15 +45,11 @@ async def on_select_plant(
         await cq.answer("Не распознал выбор.")
         return
     await sessions_repo.set_current_plant(db, user.tg_id, plant_id)
-    await audit_svc.record(
-        db, tg_id=user.tg_id, action="select_plant", payload={"plant_id": plant_id}
-    )
+    await audit_svc.record(db, tg_id=user.tg_id, action="select_plant", payload={"plant_id": plant_id})
     await cq.answer(f"Выбрано: {plant_id}")
     if isinstance(cq.message, Message):
         try:
-            await cq.message.edit_text(
-                f"Текущее растение: <code>{plant_id}</code>"
-            )
+            await cq.message.edit_text(f"Текущее растение: <code>{plant_id}</code>")
         except Exception:
             pass
 

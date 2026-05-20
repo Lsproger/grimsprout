@@ -1,4 +1,5 @@
 """Integration tests for grimsprout.db.repositories.users."""
+
 from __future__ import annotations
 
 import pytest
@@ -57,15 +58,11 @@ async def test_set_role_missing_user(mongo_db) -> None:
 
 
 async def test_list_all_orders_by_added_at(mongo_db) -> None:
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
-    base = datetime.utcnow()
-    await users_repo.upsert(
-        mongo_db, User(tg_id=2, role="viewer", added_at=base + timedelta(seconds=2))
-    )
-    await users_repo.upsert(
-        mongo_db, User(tg_id=1, role="viewer", added_at=base + timedelta(seconds=1))
-    )
+    base = datetime.now(tz=UTC)
+    await users_repo.upsert(mongo_db, User(tg_id=2, role="viewer", added_at=base + timedelta(seconds=2)))
+    await users_repo.upsert(mongo_db, User(tg_id=1, role="viewer", added_at=base + timedelta(seconds=1)))
 
     listed = await users_repo.list_all(mongo_db)
     tg_ids = [u.tg_id for u in listed]

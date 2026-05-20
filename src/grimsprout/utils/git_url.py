@@ -8,6 +8,7 @@ Supported schemes:
 Anything else (including absolute/relative filesystem paths) is treated as
 a local path by :func:`is_git_url`.
 """
+
 from __future__ import annotations
 
 import re
