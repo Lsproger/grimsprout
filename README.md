@@ -43,22 +43,26 @@ docs/             # spec/ + adr/
 ```
 
 ## Этапы реализации
-План этапов — в [memories/session/plan.md] (Phase 1–6). Текущее состояние репозитория — каркас (Фаза 0): структура модулей, контракты, конфиг, без бизнес-логики.
+Подробный план — в [docs/plan.md](docs/plan.md).
+
+Текущее состояние: **Фаза 2 завершена** (Git-модуль + фото), следующая — Фаза 3 (LLM-интеграция).
 
 ## Тесты
 
 ```bash
 pip install -r requirements-dev.txt
 
-# Юнит-тесты (без MongoDB):
-pytest -q -m "not mongo"
+# Линт + тесты (одной командой):
+make check
+
+# Или по отдельности:
+make lint
+make test
+make fmt          # авто-форматирование
 
 # Полный прогон, включая интеграцию с Mongo:
 docker run --rm -d -p 27017:27017 --name grimsprout-mongo mongo:7
 MONGO_TEST_URI=mongodb://localhost:27017 pytest -q
-
-# Линт:
-ruff check src tests
 ```
 
 Покрытие считается по `src/grimsprout` (см. `pyproject.toml`). В CI обязательное минимальное покрытие — 75%.

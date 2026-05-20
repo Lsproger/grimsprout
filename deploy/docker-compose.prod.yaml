@@ -1,0 +1,26 @@
+services:
+  bot:
+    image: ghcr.io/lsproger/grimsprout:latest
+    restart: unless-stopped
+    env_file:
+      - /opt/grimsprout/.env
+    environment:
+      GRIMSPROUT_CONFIG: "/app/config/config.yaml"
+    volumes:
+      - /opt/grimsprout/config:/app/config:ro
+      - bot_repo:/app/var/repo
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    environment:
+      WATCHTOWER_POLL_INTERVAL: "300"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_INCLUDE_STOPPED: "false"
+      WATCHTOWER_LABEL_ENABLE: "false"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/config.json:ro
+
+volumes:
+  bot_repo:
