@@ -6,7 +6,7 @@ telegram:
 repository:
   # Either a local path or a git URL (git@host:owner/repo.git, https://..., ssh://...).
   # If a URL is given, the repo is cloned into clone_dir/<repo-name> on startup.
-  path: "git@github.com:Lsproger/trava.git"
+  path: "https://github.com/Lsproger/trava.git"
   images_dir: "images"
   template_file: "_template.md"
   git_remote: "origin"
