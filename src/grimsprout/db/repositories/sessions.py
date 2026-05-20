@@ -1,7 +1,7 @@
 """SessionsRepo: per-user current plant selection."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -22,7 +22,7 @@ async def set_current_plant(
     await db.sessions.update_one(
         {"tg_id": tg_id},
         {
-            "$set": {"current_plant_id": plant_id, "updated_at": datetime.utcnow()},
+            "$set": {"current_plant_id": plant_id, "updated_at": datetime.now(tz=UTC)},
             "$setOnInsert": {"tg_id": tg_id},
         },
         upsert=True,

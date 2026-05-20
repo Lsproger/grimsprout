@@ -57,9 +57,9 @@ async def test_set_role_missing_user(mongo_db) -> None:
 
 
 async def test_list_all_orders_by_added_at(mongo_db) -> None:
-    from datetime import datetime, timedelta
+    from datetime import UTC, datetime, timedelta
 
-    base = datetime.utcnow()
+    base = datetime.now(tz=UTC)
     await users_repo.upsert(
         mongo_db, User(tg_id=2, role="viewer", added_at=base + timedelta(seconds=2))
     )

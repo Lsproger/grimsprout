@@ -1,7 +1,7 @@
 """UsersRepo: CRUD over `users` collection."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
@@ -58,7 +58,7 @@ async def ensure_bootstrap_admin(db: AsyncIOMotorDatabase, tg_id: int) -> bool:
             role="admin",
             display_name="bootstrap-admin",
             added_by=None,
-            added_at=datetime.utcnow(),
+            added_at=datetime.now(tz=UTC),
         ).model_dump()
     )
     return True

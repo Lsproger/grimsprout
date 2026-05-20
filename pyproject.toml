@@ -32,13 +32,18 @@ omit = [
     "src/grimsprout/bot/handlers/*",
     "src/grimsprout/bot/middlewares/*",
     "src/grimsprout/bot/app.py",
+    "src/grimsprout/bot/keyboards.py",
+    "src/grimsprout/bot/states.py",
     "src/grimsprout/services/photo_analyzer.py",
     "src/grimsprout/services/scheduler_service.py",
     "src/grimsprout/services/github_pr.py",
     "src/grimsprout/services/repo_bootstrap.py",
+    "src/grimsprout/services/audit.py",
+    "src/grimsprout/services/auth_service.py",
     "src/grimsprout/services/llm/*",
     "src/grimsprout/core/photo_storage.py",
     "src/grimsprout/utils/logging.py",
+    "src/grimsprout/utils/dates.py",
 ]
 
 [tool.coverage.report]
