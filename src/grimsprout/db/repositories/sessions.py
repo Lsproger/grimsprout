@@ -1,4 +1,5 @@
 """SessionsRepo: per-user current plant selection."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime
@@ -16,9 +17,7 @@ async def get(db: AsyncIOMotorDatabase, tg_id: int) -> Session | None:
     return Session(**doc)
 
 
-async def set_current_plant(
-    db: AsyncIOMotorDatabase, tg_id: int, plant_id: str | None
-) -> None:
+async def set_current_plant(db: AsyncIOMotorDatabase, tg_id: int, plant_id: str | None) -> None:
     await db.sessions.update_one(
         {"tg_id": tg_id},
         {

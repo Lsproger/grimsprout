@@ -1,4 +1,5 @@
 """Tests for grimsprout.services.git_service."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -11,6 +12,7 @@ from grimsprout.services.git_service import GitError
 from grimsprout.utils.errors import DirtyRepoError
 
 # ---- add ----------------------------------------------------------------------------
+
 
 def test_add_stages_named_path(tmp_git_repo: Path) -> None:
     target = tmp_git_repo / "plant.md"
@@ -37,6 +39,7 @@ def test_add_empty_paths_is_noop(tmp_git_repo: Path) -> None:
 
 
 # ---- _assert_clean_outside (via add) ------------------------------------------------
+
 
 def test_add_rejects_unrelated_staged_file(tmp_git_repo: Path) -> None:
     repo = git.Repo(tmp_git_repo)
@@ -75,6 +78,7 @@ def test_add_allows_unrelated_untracked_file(tmp_git_repo: Path) -> None:
 
 # ---- commit -------------------------------------------------------------------------
 
+
 def test_commit_with_staged_paths_returns_sha(tmp_git_repo: Path) -> None:
     target = tmp_git_repo / "plant.md"
     target.write_text("# x\n", encoding="utf-8")
@@ -95,6 +99,7 @@ def test_commit_empty_index_raises(tmp_git_repo: Path) -> None:
 
 # ---- _wait_lock ---------------------------------------------------------------------
 
+
 def test_index_lock_held_raises(tmp_git_repo: Path) -> None:
     lock = tmp_git_repo / ".git" / "index.lock"
     lock.write_text("", encoding="utf-8")
@@ -106,6 +111,7 @@ def test_index_lock_held_raises(tmp_git_repo: Path) -> None:
 
 
 # ---- push -----------------------------------------------------------------------
+
 
 def test_push_to_bare_remote(tmp_git_repo: Path, bare_remote: Path) -> None:
     repo = git.Repo(tmp_git_repo)

@@ -1,4 +1,5 @@
 """Integration tests for grimsprout.db.repositories.audit."""
+
 from __future__ import annotations
 
 import pytest

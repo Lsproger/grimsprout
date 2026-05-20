@@ -1,4 +1,5 @@
 """Photo handling: download → photo_storage → changelog → git commit."""
+
 from __future__ import annotations
 
 from datetime import date
@@ -37,9 +38,7 @@ async def _resolve_plant_id(
     if sess and sess.current_plant_id:
         return sess.current_plant_id
 
-    await message.answer(
-        "Не могу определить растение. Выбери через /plants или укажи id в подписи к фото."
-    )
+    await message.answer("Не могу определить растение. Выбери через /plants или укажи id в подписи к фото.")
     return None
 
 
@@ -70,9 +69,7 @@ async def on_photo(
     data = bio.read()
 
     # Save to repo/images/
-    rel_path = photo_storage.save(
-        repo_path, cfg.repository.images_dir, plant_id, data
-    )
+    rel_path = photo_storage.save(repo_path, cfg.repository.images_dir, plant_id, data)
 
     # Append changelog entry with photo link
     caption_text = (message.caption or "").strip()
@@ -91,8 +88,7 @@ async def on_photo(
     except DirtyRepoError as exc:
         logger.warning("dirty repo blocked photo save: {}", exc)
         await message.answer(
-            "🪦 Склеп в беспорядке: в репозитории есть посторонние правки.\n"
-            f"Подробности: <code>{exc}</code>"
+            f"🪦 Склеп в беспорядке: в репозитории есть посторонние правки.\nПодробности: <code>{exc}</code>"
         )
         return
     except GrimSproutError as exc:

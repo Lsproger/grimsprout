@@ -1,4 +1,5 @@
 """Pydantic models for Mongo documents."""
+
 from __future__ import annotations
 
 from datetime import UTC, datetime

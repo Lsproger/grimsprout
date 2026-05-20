@@ -5,6 +5,7 @@ Behavior:
 - Unknown user → writes audit `access_denied`, replies with a stylized stub,
   notifies the first admin in DM (deduped per-process). Stops handler chain.
 """
+
 from __future__ import annotations
 
 import html

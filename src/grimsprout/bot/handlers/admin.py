@@ -1,4 +1,5 @@
 """Admin commands: /add_user, /set_role, /list_users."""
+
 from __future__ import annotations
 
 from typing import cast
@@ -57,9 +58,7 @@ async def cmd_add_user(
         action="add_user",
         payload={"target_tg_id": tg_id, "role": role, "display_name": display_name},
     )
-    await message.answer(
-        f"➕ <code>{tg_id}</code> зачислен в склеп как <code>{role}</code>."
-    )
+    await message.answer(f"➕ <code>{tg_id}</code> зачислен в склеп как <code>{role}</code>.")
 
 
 @router.message(Command("set_role"))
@@ -82,9 +81,7 @@ async def cmd_set_role(
         return
     role = raw[1]
     if role not in VALID_ROLES:
-        await message.answer(
-            f"Неизвестная роль <code>{role}</code>. Доступны: {', '.join(VALID_ROLES)}."
-        )
+        await message.answer(f"Неизвестная роль <code>{role}</code>. Доступны: {', '.join(VALID_ROLES)}.")
         return
     target = await users_repo.get_by_tg_id(db, tg_id)
     if target is None:
@@ -102,17 +99,12 @@ async def cmd_set_role(
 
 @router.message(Command("list_users"))
 @requires_role("admin")
-async def cmd_list_users(
-    message: Message, db: AsyncIOMotorDatabase, **_: object
-) -> None:
+async def cmd_list_users(message: Message, db: AsyncIOMotorDatabase, **_: object) -> None:
     items = await users_repo.list_all(db)
     if not items:
         await message.answer("В склепе пусто.")
         return
-    lines = [
-        f"<code>{u.tg_id}</code> · <b>{u.role}</b> · {u.display_name or '—'}"
-        for u in items
-    ]
+    lines = [f"<code>{u.tg_id}</code> · <b>{u.role}</b> · {u.display_name or '—'}" for u in items]
     await message.answer("👥 Обитатели склепа:\n" + "\n".join(lines))
 
 

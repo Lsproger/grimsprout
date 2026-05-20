@@ -1,4 +1,5 @@
 """/start, /help, /whoami — basic introductory commands."""
+
 from __future__ import annotations
 
 import html
@@ -37,9 +38,7 @@ HELP_LINES_ADMIN = [
 async def cmd_start(message: Message, user: User, **_: object) -> None:
     name = html.escape(message.from_user.full_name if message.from_user else "")
     await message.answer(
-        f"🪦 Добро пожаловать в склеп, <b>{name}</b>.\n"
-        f"Твоя роль: <code>{user.role}</code>.\n"
-        f"Команды — /help."
+        f"🪦 Добро пожаловать в склеп, <b>{name}</b>.\nТвоя роль: <code>{user.role}</code>.\nКоманды — /help."
     )
 
 
@@ -54,9 +53,7 @@ async def cmd_help(message: Message, user: User, **_: object) -> None:
 
 
 @router.message(Command("whoami"))
-async def cmd_whoami(
-    message: Message, user: User, db: AsyncIOMotorDatabase, **_: object
-) -> None:
+async def cmd_whoami(message: Message, user: User, db: AsyncIOMotorDatabase, **_: object) -> None:
     sess = await sessions_repo.get(db, user.tg_id)
     current = sess.current_plant_id if sess else None
     await message.answer(

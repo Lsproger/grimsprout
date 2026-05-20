@@ -10,6 +10,7 @@ Only the minimal subset needed by the bot is implemented:
 Auth uses a Bearer token taken from the env var configured by
 ``repository.github_token_env`` (default ``GITHUB_TOKEN``).
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -72,9 +73,7 @@ def open_pr(
 
     with httpx.Client(timeout=15.0, headers=headers) as client:
         # Idempotency: look for an existing open PR head→base first.
-        existing = client.get(
-            api, params={"state": "open", "head": f"{url.owner}:{head}", "base": base}
-        )
+        existing = client.get(api, params={"state": "open", "head": f"{url.owner}:{head}", "base": base})
         if existing.status_code == 200 and existing.json():
             pr = existing.json()[0]
             logger.info("reusing existing PR #{n}: {url}", n=pr["number"], url=pr["html_url"])

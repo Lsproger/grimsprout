@@ -1,4 +1,5 @@
 """Bot bootstrap: Dispatcher, middlewares, handlers registration."""
+
 from __future__ import annotations
 
 import asyncio
@@ -48,9 +49,7 @@ async def run() -> None:
     await init_indexes(db)
     inserted = await users_repo.ensure_bootstrap_admin(db, cfg.telegram.bootstrap_admin_tg_id)
     if inserted:
-        logger.info(
-            "bootstrap admin inserted: tg_id={id}", id=cfg.telegram.bootstrap_admin_tg_id
-        )
+        logger.info("bootstrap admin inserted: tg_id={id}", id=cfg.telegram.bootstrap_admin_tg_id)
 
     bot = Bot(
         token=token,

@@ -21,6 +21,7 @@ Auth:
   persisted to ``.git/config``. ``GIT_TERMINAL_PROMPT=0`` is exported to
   prevent interactive prompts on later push.
 """
+
 from __future__ import annotations
 
 import os
@@ -90,9 +91,7 @@ def _clone(cfg: AppConfig, url: GitUrl, target: Path) -> git.Repo:
     try:
         repo = git.Repo.clone_from(auth_url, target)
     except git.GitCommandError as exc:
-        raise RepoBootstrapError(
-            f"HTTPS clone failed for {url.raw}: {exc.stderr or exc}"
-        ) from exc
+        raise RepoBootstrapError(f"HTTPS clone failed for {url.raw}: {exc.stderr or exc}") from exc
     # Rewrite remote so the token is not persisted in .git/config.
     try:
         repo.remote("origin").set_url(url.raw)
@@ -175,9 +174,7 @@ def ensure_workdir(cfg: AppConfig) -> Path:
             repo = _clone(cfg, url, target)
         local = Path(repo.working_tree_dir or target).resolve()
 
-    _ensure_work_branch(
-        repo, base_branch=cfg.repository.git_branch, work_branch=cfg.repository.work_branch
-    )
+    _ensure_work_branch(repo, base_branch=cfg.repository.git_branch, work_branch=cfg.repository.work_branch)
 
     cfg.repository.local_path = local
     logger.info(

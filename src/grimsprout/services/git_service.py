@@ -6,6 +6,7 @@ Design notes:
   Untracked files are allowed (user may be working on a new card).
 - `.git/index.lock` is waited for up to 2 seconds.
 """
+
 from __future__ import annotations
 
 import time

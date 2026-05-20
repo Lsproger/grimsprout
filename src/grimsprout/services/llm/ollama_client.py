@@ -3,6 +3,7 @@
 TODO(phase-3):
 - async chat(messages, model, temperature, timeout) -> raw json str
 """
+
 from __future__ import annotations
 
 from typing import Any

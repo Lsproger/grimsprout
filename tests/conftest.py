@@ -1,4 +1,5 @@
 """Shared pytest fixtures."""
+
 from __future__ import annotations
 
 import os
@@ -57,6 +58,7 @@ def _clear_config_cache() -> Iterator[None]:
 
 
 # ---- Mongo integration fixtures ----------------------------------------------------
+
 
 def _mongo_uri() -> str | None:
     uri = os.environ.get("MONGO_TEST_URI")

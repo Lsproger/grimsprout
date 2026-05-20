@@ -7,6 +7,7 @@ Resolution order for the target plant:
 On success: updates YAML date field, appends a changelog entry, stages and
 commits the .md file in the trava repo. Photo handling is out of scope here.
 """
+
 from __future__ import annotations
 
 from datetime import date
@@ -47,9 +48,7 @@ async def _resolve_plant_id(
     if arg:
         path = plant_repo.find(cfg.repository.require_local_path(), arg)
         if path is None:
-            await message.answer(
-                f"Не нашёл растения по запросу: <code>{arg}</code>. Попробуй /plants."
-            )
+            await message.answer(f"Не нашёл растения по запросу: <code>{arg}</code>. Попробуй /plants.")
             return None
         return path.stem
 
@@ -57,9 +56,7 @@ async def _resolve_plant_id(
     if sess and sess.current_plant_id:
         return sess.current_plant_id
 
-    await message.answer(
-        "Сначала выбери растение через /plants или укажи id аргументом."
-    )
+    await message.answer("Сначала выбери растение через /plants или укажи id аргументом.")
     return None
 
 
@@ -101,8 +98,7 @@ async def _apply_action(
             file=f"{plant_id}.md",
         )
         await message.answer(
-            "🪦 Склеп в беспорядке: в репозитории есть посторонние правки.\n"
-            f"Подробности: <code>{exc}</code>"
+            f"🪦 Склеп в беспорядке: в репозитории есть посторонние правки.\nПодробности: <code>{exc}</code>"
         )
         return
     except GrimSproutError as exc:

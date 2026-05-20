@@ -1,4 +1,5 @@
 """High-level plant repository operations on `trava/*.md` files."""
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -1,4 +1,5 @@
 """Tests for grimsprout.core.changelog."""
+
 from __future__ import annotations
 
 from datetime import date
@@ -15,8 +16,7 @@ def test_append_entry_inserts_at_top_of_changelog(tmp_path: Path) -> None:
     card = tmp_path / "card.md"
     _make_card(
         card,
-        "## Журнал изменений (Changelog)\n\n"
-        "- **2026-05-15**: Старая запись.\n",
+        "## Журнал изменений (Changelog)\n\n- **2026-05-15**: Старая запись.\n",
     )
 
     changelog.append_entry(card, date(2026, 5, 18), "Новая запись.")
@@ -32,9 +32,7 @@ def test_append_entry_with_photo_adds_image_line(tmp_path: Path) -> None:
     card = tmp_path / "card.md"
     _make_card(card, "## Журнал изменений (Changelog)\n\n")
 
-    changelog.append_entry(
-        card, date(2026, 5, 18), "С фото.", photo_rel="images/x/abc.jpg"
-    )
+    changelog.append_entry(card, date(2026, 5, 18), "С фото.", photo_rel="images/x/abc.jpg")
 
     _, body = md_parser.read(card)
     assert "- **2026-05-18**: С фото." in body

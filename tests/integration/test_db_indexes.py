@@ -1,4 +1,5 @@
 """Integration smoke tests for grimsprout.db.client (indexes)."""
+
 from __future__ import annotations
 
 import pytest
