@@ -42,10 +42,12 @@ echo "=== Docker login to GHCR ==="
 echo "You need a GitHub PAT with 'read:packages' scope."
 echo "Create one at: https://github.com/settings/tokens?type=beta"
 echo ""
-read -rp "GitHub username [lsproger]: " GH_USER
+read -rp "GitHub username [lsproger]: " GH_USER </dev/tty
 GH_USER="${GH_USER:-lsproger}"
-read -rsp "GitHub PAT (read:packages): " GH_TOKEN
-echo ""
+if [[ -z "${GH_TOKEN:-}" ]]; then
+  read -rsp "GitHub PAT (read:packages): " GH_TOKEN </dev/tty
+  echo ""
+fi
 echo "$GH_TOKEN" | docker login ghcr.io -u "$GH_USER" --password-stdin
 echo "[✓] Logged in to ghcr.io"
 
