@@ -12,6 +12,7 @@ from loguru import logger
 
 from grimsprout.bot.handlers import actions, admin, plants, start
 from grimsprout.bot.handlers import git as git_handlers
+from grimsprout.bot.handlers import photo as photo_handlers
 from grimsprout.bot.middlewares.auth import AuthMiddleware
 from grimsprout.config import load_config, load_env
 from grimsprout.db.client import get_db, init_indexes
@@ -68,6 +69,7 @@ async def run() -> None:
     actions.register(dp)
     admin.register(dp)
     git_handlers.register(dp)
+    photo_handlers.register(dp)
 
     me = await bot.get_me()
     logger.info("bot online: @{u} (id={id})", u=me.username, id=me.id)
