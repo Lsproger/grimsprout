@@ -11,7 +11,7 @@ from aiogram.enums import ParseMode
 from aiogram.types import BotCommand
 from loguru import logger
 
-from grimsprout.bot.handlers import actions, admin, plants, start
+from grimsprout.bot.handlers import actions, admin, llm_router, plants, start
 from grimsprout.bot.handlers import git as git_handlers
 from grimsprout.bot.handlers import photo as photo_handlers
 from grimsprout.bot.middlewares.auth import AuthMiddleware
@@ -69,6 +69,7 @@ async def run() -> None:
     admin.register(dp)
     git_handlers.register(dp)
     photo_handlers.register(dp)
+    llm_router.register(dp)  # LAST: catch-all for free text
 
     me = await bot.get_me()
     logger.info("bot online: @{u} (id={id})", u=me.username, id=me.id)
