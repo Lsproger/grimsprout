@@ -24,6 +24,13 @@
 - **Photo storage** — сохранение фото из Telegram в `images/`, дедупликация при альбомах
 - Photo handler — download → save → changelog → git commit
 
+## Инфраструктура ✅
+- CI: lint (ruff) + test (pytest, coverage ≥75%) на push/PR
+- CD: `build-and-push` джоба → `ghcr.io/lsproger/grimsprout:latest` + SHA-тег
+- LXC (Proxmox): `docker-compose.prod.yaml` с bot + Watchtower
+- Watchtower: авто-pull каждые 5 мин, аутентификация через `/root/.docker/config.json`
+- Zero-downtime не требуется (polling-бот, Telegram буферизирует)
+
 ## Фаза 3 — Интеграция LLM 🔜
 - [ ] `ollama_client.py` — async chat через httpx
 - [ ] `intent_parser.py` — парсинг JSON-интента из ответа LLM
@@ -32,6 +39,8 @@
 - [ ] Сопоставление сущностей из LLM с файлами растений
 
 ## Фаза 4 — Полировка и расширения
+- [ ] `/info` — просмотр карточки растения (YAML + последние changelog) ← **NEW**
+- [ ] `/edit` — редактирование полей карточки (quick + interactive FSM) ← **NEW**
 - [ ] `scheduler_service.py` — APScheduler, напоминания о поливе
 - [ ] `/new` — FSM-создание новой карточки
 - [ ] `/schedule`, `/snooze` — управление расписаниями
