@@ -1,7 +1,7 @@
 # Phase 3C: Action Dispatch from Intent
 
 **Фаза**: 3
-**Статус**: backlog
+**Статус**: done
 **Приоритет**: high
 **Зависимости**: phase3-001, phase3-002
 **Блокирует**: нет (но Phase 4 info/edit расширят dispatch)

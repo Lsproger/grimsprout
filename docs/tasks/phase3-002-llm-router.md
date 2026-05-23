@@ -1,7 +1,7 @@
 # Phase 3B: LLM Router Handler
 
 **Фаза**: 3
-**Статус**: backlog
+**Статус**: done
 **Приоритет**: high
 **Зависимости**: phase3-001 (ollama client)
 **Блокирует**: phase3-003
