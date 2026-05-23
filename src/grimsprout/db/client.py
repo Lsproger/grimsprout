@@ -8,14 +8,15 @@ from functools import lru_cache
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from pymongo import ASCENDING, DESCENDING
 
-from grimsprout.config import load_config, load_env
+from grimsprout.config import load_config
 
 
 @lru_cache(maxsize=1)
 def get_client() -> AsyncIOMotorClient:
     cfg = load_config()
-    env = load_env()
-    uri = os.environ.get(cfg.mongo.uri_env) or env.MONGO_URI
+    uri = os.environ.get(cfg.mongo.uri_env)
+    if not uri:
+        raise RuntimeError(f"MongoDB URI not set (env var: {cfg.mongo.uri_env})")
     return AsyncIOMotorClient(uri)
 
 

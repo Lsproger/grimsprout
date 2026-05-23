@@ -25,6 +25,9 @@ pip install -r requirements.txt
 cp config/config.example.yaml config/config.yaml      # отредактируй
 cp .env.example .env                                   # положи BOT_TOKEN
 
+# По умолчанию активен профиль env: local (grimsprout_dev БД, localhost Ollama, dev-бот).
+# Для prod: GRIMSPROUT_ENV=prod python -m grimsprout
+
 # Mongo и Ollama должны быть запущены отдельно
 python -m grimsprout
 ```

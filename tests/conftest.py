@@ -62,7 +62,12 @@ def _clear_config_cache() -> Iterator[None]:
 
 def _mongo_uri() -> str | None:
     uri = os.environ.get("MONGO_TEST_URI")
-    return uri or None
+    if not uri:
+        # Fall back to .env via the same pydantic-settings loader the app uses.
+        from grimsprout.config import load_env
+
+        uri = load_env().MONGO_TEST_URI or None
+    return uri
 
 
 @pytest.fixture

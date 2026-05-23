@@ -2,58 +2,99 @@
 
 ## 8.1. Источники
 - `config/config.yaml` — основная конфигурация (не коммитим, есть `config.example.yaml`).
-- `.env` — секреты (BOT_TOKEN, MONGO_URI).
-- Переменные окружения переопределяют YAML.
+- `.env` — секреты (токены, URI).
+- `GRIMSPROUT_ENV` — переменная окружения для выбора активного профиля.
 
-## 8.2. Схема `config.yaml`
+## 8.2. Env-профили
+
+`config.yaml` поддерживает именованные профили (`local`, `prod` и любые другие). Активный профиль задаётся верхнеуровневым ключом `env:` или переменной окружения `GRIMSPROUT_ENV` (она имеет приоритет над файлом).
+
+```bash
+# Переключение без правки файла:
+GRIMSPROUT_ENV=prod python -m grimsprout
+```
+
+Механизм: загрузчик проходит по каждой секции. Если секция содержит под-ключ с именем активного профиля, его поля мержатся поверх «плоских» (общих) полей секции. Секции без под-ключа передаются без изменений — это обеспечивает полную обратную совместимость со старыми плоскими конфигами.
+
+## 8.3. Схема `config.yaml`
 ```yaml
+# Активный профиль. Переопределяется GRIMSPROUT_ENV.
+env: local
+
 telegram:
-  token_env: "BOT_TOKEN"
-  bootstrap_admin_tg_id: 123456789
-  parse_mode: "HTML"
+  bootstrap_admin_tg_id: 123456789  # общее поле
+  parse_mode: "HTML"                 # общее поле
+  local:
+    token_env: "BOT_TOKEN_DEV"       # имя переменной в .env для dev-бота
+  prod:
+    token_env: "BOT_TOKEN"           # имя переменной в .env для prod-бота
 
 repository:
-  # Either a local path or a git URL (git@host:owner/repo.git, https://..., ssh://...).
-  # If a URL is given, the repo is cloned into clone_dir/<repo-name> on startup.
-  path: "/opt/data/trava"
+  # Общие поля (одинаковы для всех профилей)
   images_dir: "images"
   template_file: "_template.md"
   git_remote: "origin"
-  git_branch: "master"           # base branch; bot never writes to it directly
-  work_branch: "grimsprout/auto"  # bot-only branch; all auto-commits land here
-  clone_dir: "var/repo"           # relative to project root; used when path is a URL
-  https_token_env: "GIT_HTTPS_TOKEN"  # env var for HTTPS clone/push auth
-  github_token_env: "GITHUB_TOKEN"    # env var for /pr (GitHub API)
+  git_branch: "master"
+  work_branch: "grimsprout/auto"
+  clone_dir: "var/repo"
+  local:
+    path: "var/repo/trava"           # локальный checkout
+    https_token_env: "GIT_HTTPS_TOKEN"
+    github_token_env: "GITHUB_TOKEN"
+  prod:
+    path: "https://github.com/owner/trava.git"  # клонируется при старте
+    https_token_env: "GIT_HTTPS_TOKEN"
+    github_token_env: "GITHUB_TOKEN"
 
 mongo:
-  uri_env: "MONGO_URI"
-  database: "grimsprout"
+  local:
+    uri_env: "MONGO_URI"
+    database: "grimsprout_dev"
+  prod:
+    uri_env: "MONGO_URI"
+    database: "grimsprout"
 
 llm:
+  # Общие поля
   provider: "ollama"
-  base_url: "http://localhost:11434"
-  model: "llama3"
   temperature: 0.1
   timeout_sec: 30
   system_prompt_file: "config/prompts/system_undertaker.md"
   intent_schema_file: "config/prompts/intent_schema.json"
+  local:
+    base_url: "http://localhost:11434"
+    model: "llama3"
+  prod:
+    base_url: "http://ollama.yourdomain.com:11434"
+    model: "llama3"
 
 scheduling:
-  timezone: "Europe/Warsaw"
+  timezone: "Europe/Warsaw"          # нет профилей — плоская секция
   default_snooze_days: 1
 
 logging:
-  level: "INFO"
-  json: false
+  local:
+    level: "DEBUG"
+    json: false
+  prod:
+    level: "INFO"
+    json: false
 ```
 
-## 8.3. `.env`
+## 8.4. `.env`
 ```
+# dev-бот
+BOT_TOKEN_DEV=...
+# prod-бот
 BOT_TOKEN=...
+# MongoDB
 MONGO_URI=mongodb://localhost:27017
 ```
 
-## 8.4. Загрузка
-- `pydantic-settings` + кастомный YAML-loader.
+В одном `.env` можно держать переменные для всех профилей — активный профиль определяет, какие имена читаются.
+
+## 8.5. Загрузка
+- Загрузчик: `config.load_config()` → `_resolve_env(raw)` → `AppConfig.model_validate(resolved)`.
+- `_resolve_env` разрешает профиль и мержит поля перед Pydantic-валидацией; модели данных не знают о профилях.
 - Все пути — абсолютные на этапе загрузки.
 - Валидация: `repository.path` существует и является git-репо.

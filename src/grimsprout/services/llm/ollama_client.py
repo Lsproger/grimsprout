@@ -30,6 +30,12 @@ async def chat(
     }
 
     t0 = time.monotonic()
+    logger.debug(
+        "ollama request model={} messages={} temperature={}",
+        model,
+        json.dumps(messages, ensure_ascii=False),
+        temperature,
+    )
     try:
         async with httpx.AsyncClient(timeout=timeout_sec) as client:
             resp = await client.post(url, json=payload)
@@ -58,9 +64,9 @@ async def chat(
         raise LLMResponseError(f"Invalid JSON from LLM: {content_raw[:200]}") from exc
 
     logger.debug(
-        "ollama chat model={} duration={:.2f}s content_len={}",
+        "ollama response model={} duration={:.2f}s content={}",
         model,
         duration,
-        len(content_raw),
+        content_raw,
     )
     return result

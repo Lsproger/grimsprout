@@ -15,7 +15,7 @@ from grimsprout.bot.handlers import actions, admin, llm_router, plants, start
 from grimsprout.bot.handlers import git as git_handlers
 from grimsprout.bot.handlers import photo as photo_handlers
 from grimsprout.bot.middlewares.auth import AuthMiddleware
-from grimsprout.config import load_config, load_env
+from grimsprout.config import load_config
 from grimsprout.db.client import get_db, init_indexes
 from grimsprout.db.repositories import users as users_repo
 from grimsprout.services.repo_bootstrap import ensure_workdir
@@ -36,12 +36,11 @@ BOT_COMMANDS = [
 
 async def run() -> None:
     cfg = load_config()
-    env = load_env()
     setup_logging(cfg.logging.level, cfg.logging.json_format)
 
     ensure_workdir(cfg)
 
-    token = os.environ.get(cfg.telegram.token_env) or env.BOT_TOKEN
+    token = os.environ.get(cfg.telegram.token_env)
     if not token:
         raise RuntimeError(f"Telegram bot token not set ({cfg.telegram.token_env})")
 
