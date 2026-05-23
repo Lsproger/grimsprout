@@ -11,7 +11,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-Action = Literal["water", "fertilize", "repot", "observe", "create", "unknown"]
+Action = Literal["water", "fertilize", "repot", "observe", "create", "query", "unknown"]
 
 
 class Intent(BaseModel):

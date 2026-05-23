@@ -66,6 +66,8 @@ class LLMConfig(BaseModel):
     timeout_sec: int = 30
     system_prompt_file: Path
     intent_schema_file: Path
+    confidence_threshold: float = 0.5
+    mutate_confidence_threshold: float = 0.75
 
 
 class SchedulingConfig(BaseModel):

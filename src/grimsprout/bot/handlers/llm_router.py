@@ -6,11 +6,14 @@ from datetime import date
 from pathlib import Path
 
 from aiogram import Dispatcher, F, Router
-from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import ValidationError
 
+from grimsprout.bot.keyboards import confirm_keyboard
+from grimsprout.bot.states import ActionConfirmFSM
 from grimsprout.config import AppConfig
 from grimsprout.core import changelog, md_parser, plant_repo
 from grimsprout.db.models import User
@@ -34,6 +37,9 @@ DATE_FIELDS: dict[str, str] = {
     "fertilize": "last_fertilized_date",
     "repot": "last_repot_date",
 }
+
+_MUTATING_ACTIONS: frozenset[str] = frozenset({"water", "fertilize", "repot"})
+_LLM_CONFIRM_ACTIONS: frozenset[str] = frozenset({"water", "fertilize", "repot", "observe"})
 
 _cached_system_prompt: str | None = None
 
@@ -171,6 +177,21 @@ async def _apply_intent(
     return "\n".join(parts)
 
 
+def _build_llm_preview(intent: Intent, plant_id: str) -> str:
+    """Build a confirmation preview message for LLM-triggered actions."""
+    today = date.today()
+    lines = [
+        "⏳ Подтвердить действие?",
+        f"🌿 Растение: <code>{plant_id}</code>",
+        f"🤖 {intent.action} (LLM, {intent.confidence:.0%})",
+    ]
+    if intent.changelog_entry:
+        lines.append(f"📋 {intent.changelog_entry}")
+    if intent.action in DATE_FIELDS:
+        lines.append(f"📅 Дата: <code>{today.isoformat()}</code>")
+    return "\n".join(lines)
+
+
 @router.message(F.text)
 @requires_role("editor")
 async def handle_free_text(
@@ -178,6 +199,7 @@ async def handle_free_text(
     cfg: AppConfig,
     db: AsyncIOMotorDatabase,
     user: User,
+    state: FSMContext,
     **_: object,
 ) -> None:
     """Catch-all for free text: route through LLM."""
@@ -201,10 +223,20 @@ async def handle_free_text(
         )
         return
 
-    # Low confidence or clarification needed
-    if intent.confidence < 0.5 or intent.clarification:
+    # 006: action-specific confidence threshold
+    threshold = (
+        cfg.llm.mutate_confidence_threshold
+        if intent.action in _MUTATING_ACTIONS
+        else cfg.llm.confidence_threshold
+    )
+    if intent.confidence < threshold or intent.clarification:
         reply = intent.clarification or "Не совсем понял. Уточни, что именно нужно сделать."
         await message.answer(reply)
+        return
+
+    # 004: informational query — return LLM's answer without touching git
+    if intent.action == "query":
+        await message.answer(intent.clarification or "Не знаю ответа. Попробуй /plants или /help.")
         return
 
     # Unknown action
@@ -234,6 +266,17 @@ async def handle_free_text(
         await message.answer(f"Файл карточки <code>{plant_id}.md</code> не найден.")
         return
 
+    # 005: confirm gate for LLM-mutating actions
+    if cfg.repository.confirm_commits and intent.action in _LLM_CONFIRM_ACTIONS:
+        await state.set_state(ActionConfirmFSM.waiting_llm)
+        await state.update_data(
+            intent_data=intent.model_dump(mode="json"),
+            plant_id=plant_id,
+            tg_id=user.tg_id,
+        )
+        await message.answer(_build_llm_preview(intent, plant_id), reply_markup=confirm_keyboard())
+        return
+
     # Apply intent
     try:
         reply = await _apply_intent(intent, plant_id, cfg, db, user)
@@ -249,6 +292,44 @@ async def handle_free_text(
         return
 
     await message.answer(reply)
+
+
+@router.callback_query(ActionConfirmFSM.waiting_llm, F.data.in_({"action:confirm", "action:cancel"}))
+@requires_role("editor")
+async def llm_confirm_callback(
+    callback: CallbackQuery,
+    state: FSMContext,
+    cfg: AppConfig,
+    db: AsyncIOMotorDatabase,
+    user: User,
+    **_: object,
+) -> None:
+    await callback.answer()
+
+    if callback.data == "action:cancel":
+        await state.clear()
+        await callback.message.edit_text("❌ Отменено.")
+        return
+
+    data = await state.get_data()
+    intent = Intent.model_validate(data["intent_data"])
+    plant_id = data["plant_id"]
+    await state.clear()
+
+    try:
+        reply = await _apply_intent(intent, plant_id, cfg, db, user)
+    except DirtyRepoError as exc:
+        logger.warning("dirty repo blocked LLM action: {}", exc)
+        await callback.message.edit_text(
+            f"🦴 Склеп в беспорядке: в репозитории есть посторонние правки.\n<code>{exc}</code>"
+        )
+        return
+    except GrimSproutError as exc:
+        logger.exception("LLM action failed")
+        await callback.message.edit_text(f"Ритуал прерван: <code>{exc}</code>")
+        return
+
+    await callback.message.edit_text(reply)
 
 
 def register(dp: Dispatcher) -> None:

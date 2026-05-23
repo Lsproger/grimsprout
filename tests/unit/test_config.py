@@ -216,3 +216,29 @@ def test_env_key_absent_backwards_compat(tmp_path: Path, monkeypatch: pytest.Mon
 
     assert cfg.telegram.token_env == "BOT_TOKEN"
     assert cfg.mongo.database == "grimsprout"
+
+
+def test_llm_config_threshold_defaults(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """LLMConfig carries sensible threshold defaults when not specified in YAML."""
+    cfg_path = _write_config(tmp_path, VALID_YAML)
+    monkeypatch.setenv("GRIMSPROUT_CONFIG", str(cfg_path))
+
+    cfg = cfg_module.load_config()
+
+    assert cfg.llm.confidence_threshold == 0.5
+    assert cfg.llm.mutate_confidence_threshold == 0.75
+
+
+def test_llm_config_threshold_custom(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """LLMConfig threshold fields can be overridden in YAML."""
+    custom = VALID_YAML.replace(
+        "  timeout_sec: 30",
+        "  timeout_sec: 30\n  confidence_threshold: 0.6\n  mutate_confidence_threshold: 0.9",
+    )
+    cfg_path = _write_config(tmp_path, custom)
+    monkeypatch.setenv("GRIMSPROUT_CONFIG", str(cfg_path))
+
+    cfg = cfg_module.load_config()
+
+    assert cfg.llm.confidence_threshold == 0.6
+    assert cfg.llm.mutate_confidence_threshold == 0.9
