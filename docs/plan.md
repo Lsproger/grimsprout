@@ -42,12 +42,10 @@
 - [x] Confirm gate — запрос подтверждения перед мутацией (`phase3-005`)
 - [x] Confidence threshold — порог уверенности LLM (`phase3-006`)
 
-## Фаза 4 — Полировка и расширения
-- [ ] `/info` — просмотр карточки растения (YAML + последние changelog) ← **NEW**
-- [ ] `/edit` — редактирование полей карточки (quick + interactive FSM) ← **NEW**
-- [ ] `scheduler_service.py` — APScheduler, напоминания о поливе
-- [ ] `/new` — FSM-создание новой карточки
-- [ ] `/schedule`, `/snooze` — управление расписаниями
+## Фаза 4 — Полировка и расширения 🔜
+- [x] `/info` — просмотр карточки растения (YAML + последние changelog)
+- [x] `/edit` — редактирование полей карточки (quick mode + interactive FSM, 12 полей)
+- [x] `/new` — FSM-создание новой карточки
 - [ ] Обработка edge-cases: LLM не вернула JSON, git lock timeout
 - [ ] Фирменная «загробная» стилистика ответов
 
@@ -64,7 +62,14 @@
 > **Зависимости:** Фаза 4 (команды `/edit`, `/info`)
 > **Не входит в MVP**
 
-## Фаза 6 — PhotoAnalyzer (post-MVP)
+## Фаза 6 — Планировщик напоминаний
+- [ ] `scheduler_service.py` — APScheduler + MongoDB jobstore, напоминания о поливе/удобрении/пересадке
+- [ ] `/schedule [plant_id] <kind> <interval_days>` — создать/обновить расписание
+- [ ] `/snooze [plant_id] [kind]` — отложить на `default_snooze_days`
+
+> **Зависимости:** Фаза 4 + Фаза 5 (Gemini Bridge)
+
+## Фаза 7 — PhotoAnalyzer (post-MVP)
 - [ ] LLM vision — описание фото растения по снимку
 - [ ] Автоматическое добавление описания в changelog при загрузке фото
 - [ ] Определение заболеваний / состояния листьев

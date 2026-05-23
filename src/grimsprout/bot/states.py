@@ -1,4 +1,4 @@
-"""FSM states: NewCardFSM, RegressionFSM. TODO(phase-4)."""
+"""FSM states: NewCardFSM, EditFSM, ActionConfirmFSM, RegressionFSM."""
 
 from __future__ import annotations
 
@@ -13,6 +13,11 @@ class NewCardFSM(StatesGroup):
     purchase_location = State()
     age_group = State()
     confirm = State()
+
+
+class EditFSM(StatesGroup):
+    choosing_field = State()
+    entering_value = State()
 
 
 class ActionConfirmFSM(StatesGroup):

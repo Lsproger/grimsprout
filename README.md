@@ -2,7 +2,22 @@
 
 [![CI](https://github.com/Lsproger/grimsprout/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/Lsproger/grimsprout/actions/workflows/ci.yml)
 
-Мрачный Telegram-агент для ухода за домашними растениями. Редактирует Markdown-карточки локального репозитория [`trava`](../trava), хранит фотографии, делает автокоммиты в Git и общается с пользователем через локальную LLM (Ollama). Push в remote — только вручную ролью `publisher`/`admin`.
+Мрачный Telegram-агент для ухода за домашними растениями. Редактирует Markdown-карточки локального репозитория [`trava`](../trava), хранит фотографии, делает автокоммиты в Git и общается с пользователем через локальную LLM (Ollama) или свободным текстом. Push в remote — только вручную ролью `publisher`/`admin`.
+
+## Команды
+
+| Команда | Роль | Описание |
+|---|---|---|
+| `/start`, `/help`, `/whoami` | viewer | Справка и информация о пользователе |
+| `/plants` | viewer | Список растений, выбор текущего |
+| `/info [plant_id]` | viewer | Карточка растения: YAML-поля + последние записи журнала |
+| `/water`, `/fertilize`, `/repot` | editor | Зафиксировать уход, автокоммит |
+| `/edit [field] [value]` | editor | Редактировать поле карточки (quick или FSM) |
+| `/new` | editor | Создать новую карточку (FSM, 7 шагов) |
+| `/push` | publisher | Отправить work-ветку в remote |
+| `/pr` | publisher | Открыть GitHub PR |
+| `/add_user`, `/set_role`, `/list_users` | admin | Управление пользователями |
+| Свободный текст | editor | LLM-роутер: Ollama интерпретирует намерение и предлагает действие |
 
 ## Документация
 - [Обзор](docs/spec/01-overview.md)
@@ -48,7 +63,16 @@ docs/             # spec/ + adr/
 ## Этапы реализации
 Подробный план — в [docs/plan.md](docs/plan.md).
 
-Текущее состояние: **Фаза 2 завершена** (Git-модуль + фото), следующая — Фаза 3 (LLM-интеграция).
+| Фаза | Статус |
+|---|---|
+| 0 — Каркас | ✅ |
+| 1 — Базовый фреймворк | ✅ |
+| 2 — Git-модуль + фото | ✅ |
+| 3 — Интеграция LLM (Ollama) | ✅ |
+| 4 — Полировка и расширения | 🔜 в процессе |
+| 5 — Gemini Bridge | ⏳ план |
+| 6 — Планировщик напоминаний | ⏳ план |
+| 7 — PhotoAnalyzer | post-MVP |
 
 ## Тесты
 
