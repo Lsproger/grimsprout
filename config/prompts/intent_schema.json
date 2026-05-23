@@ -8,7 +8,7 @@
     "target_file": { "type": ["string", "null"] },
     "action": {
       "type": "string",
-      "enum": ["water", "fertilize", "repot", "observe", "create", "unknown"]
+      "enum": ["water", "fertilize", "repot", "observe", "create", "query", "unknown"]
     },
     "health_delta": { "type": ["integer", "null"], "minimum": -3, "maximum": 3 },
     "tags_add": { "type": "array", "items": { "type": "string" } },
@@ -17,6 +17,7 @@
     "needs_photo": { "type": "boolean" },
     "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
     "clarification": { "type": ["string", "null"] },
+    "answer": { "type": ["string", "null"] },
     "create_fields": { "type": ["object", "null"], "additionalProperties": true },
     "reschedule_days": { "type": ["integer", "null"] }
   }

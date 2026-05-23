@@ -16,17 +16,20 @@ async def chat(
     base_url: str,
     model: str,
     messages: list[dict[str, str]],
-    temperature: float = 0.1,
+    temperature: float = 1.0,
     timeout_sec: int = 30,
+    format_schema: dict | None = None,
+    top_p: float = 0.95,
+    top_k: int = 64,
 ) -> dict[str, Any]:
     """Send a chat request to Ollama and return parsed JSON content."""
     url = f"{base_url.rstrip('/')}/api/chat"
     payload = {
         "model": model,
         "messages": messages,
-        "format": "json",
+        "format": format_schema if format_schema is not None else "json",
         "stream": False,
-        "options": {"temperature": temperature},
+        "options": {"temperature": temperature, "top_p": top_p, "top_k": top_k},
     }
 
     t0 = time.monotonic()

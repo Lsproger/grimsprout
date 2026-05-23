@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
-from datetime import date
+import json
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from aiogram import Dispatcher, F, Router
-from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message
 from loguru import logger
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from pydantic import ValidationError
 
+from grimsprout.bot.keyboards import confirm_keyboard
+from grimsprout.bot.states import ActionConfirmFSM
 from grimsprout.config import AppConfig
 from grimsprout.core import changelog, md_parser, plant_repo
-from grimsprout.db.models import User
+from grimsprout.db.models import Session, User
 from grimsprout.db.repositories import sessions as sessions_repo
 from grimsprout.services import audit as audit_svc
 from grimsprout.services import git_service
@@ -35,7 +39,18 @@ DATE_FIELDS: dict[str, str] = {
     "repot": "last_repot_date",
 }
 
+_MUTATING_ACTIONS: frozenset[str] = frozenset({"water", "fertilize", "repot"})
+_LLM_CONFIRM_ACTIONS: frozenset[str] = frozenset({"water", "fertilize", "repot", "observe"})
+
 _cached_system_prompt: str | None = None
+_cached_intent_schema: dict | None = None
+
+
+def _load_intent_schema(cfg: AppConfig) -> dict:
+    global _cached_intent_schema  # noqa: PLW0603
+    if _cached_intent_schema is None:
+        _cached_intent_schema = json.loads(cfg.llm.intent_schema_file.read_text(encoding="utf-8"))
+    return _cached_intent_schema
 
 
 def _load_system_prompt(cfg: AppConfig) -> str:
@@ -47,16 +62,56 @@ def _load_system_prompt(cfg: AppConfig) -> str:
     return _cached_system_prompt
 
 
-def _build_messages(cfg: AppConfig, user_text: str) -> list[dict[str, str]]:
+def _build_messages(
+    cfg: AppConfig,
+    user_text: str,
+    history: list[dict[str, str]] | None = None,
+) -> list[dict[str, str]]:
     system_prompt = _load_system_prompt(cfg)
     repo_path = cfg.repository.require_local_path()
     plants = plant_repo.list_plants(repo_path)
     plant_ids = ", ".join(p["id"] for p in plants)
-    return [
+    plant_count = len(plants)
+    messages: list[dict[str, str]] = [
         {"role": "system", "content": system_prompt},
-        {"role": "system", "content": f"Известные растения: {plant_ids}"},
-        {"role": "user", "content": user_text},
+        {
+            "role": "system",
+            "content": (
+                f"The user has {plant_count} plant(s) registered: {plant_ids}. "
+                "Use this list when answering questions about the collection."
+            ),
+        },
     ]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": user_text})
+    return messages
+
+
+def _extract_valid_history(
+    sess: Session | None,
+    cfg: AppConfig,
+) -> list[dict[str, str]]:
+    """Return recent conversation turns if within TTL, otherwise empty list."""
+    if not sess or not sess.conversation_history:
+        return []
+    cutoff = datetime.now(tz=UTC) - timedelta(minutes=cfg.llm.conversation_ttl_minutes)
+    if sess.updated_at.replace(tzinfo=UTC) < cutoff:
+        return []
+    max_items = cfg.llm.conversation_history_max_turns * 2
+    return [{"role": turn.role, "content": turn.content} for turn in sess.conversation_history[-max_items:]]
+
+
+async def _save_turn(
+    db: AsyncIOMotorDatabase,
+    tg_id: int,
+    user_text: str,
+    assistant_reply: str,
+    max_items: int,
+) -> None:
+    """Persist a user+assistant turn to conversation history."""
+    await sessions_repo.append_history(db, tg_id, "user", user_text, max_items)
+    await sessions_repo.append_history(db, tg_id, "assistant", assistant_reply, max_items)
 
 
 async def _resolve_plant_from_intent(
@@ -79,14 +134,18 @@ async def _resolve_plant_from_intent(
 
 async def _call_llm(cfg: AppConfig, messages: list[dict[str, str]]) -> Intent:
     """Call LLM and parse intent, with one retry on parse failure."""
+    schema = _load_intent_schema(cfg)
     raw = await ollama_client.chat(
         cfg.llm.base_url,
         cfg.llm.model,
         messages,
         cfg.llm.temperature,
         cfg.llm.timeout_sec,
+        format_schema=schema,
+        top_p=cfg.llm.top_p,
+        top_k=cfg.llm.top_k,
     )
-    raw_str = raw if isinstance(raw, str) else __import__("json").dumps(raw)
+    raw_str = raw if isinstance(raw, str) else json.dumps(raw)
     try:
         return parse(raw_str)
     except ValidationError:
@@ -98,8 +157,11 @@ async def _call_llm(cfg: AppConfig, messages: list[dict[str, str]]) -> Intent:
             messages_retry,
             cfg.llm.temperature,
             cfg.llm.timeout_sec,
+            format_schema=schema,
+            top_p=cfg.llm.top_p,
+            top_k=cfg.llm.top_k,
         )
-        raw_str2 = raw2 if isinstance(raw2, str) else __import__("json").dumps(raw2)
+        raw_str2 = raw2 if isinstance(raw2, str) else json.dumps(raw2)
         return parse(raw_str2)  # raise if still invalid
 
 
@@ -171,6 +233,21 @@ async def _apply_intent(
     return "\n".join(parts)
 
 
+def _build_llm_preview(intent: Intent, plant_id: str) -> str:
+    """Build a confirmation preview message for LLM-triggered actions."""
+    today = date.today()
+    lines = [
+        "⏳ Подтвердить действие?",
+        f"🌿 Растение: <code>{plant_id}</code>",
+        f"🤖 {intent.action} (LLM, {intent.confidence:.0%})",
+    ]
+    if intent.changelog_entry:
+        lines.append(f"📋 {intent.changelog_entry}")
+    if intent.action in DATE_FIELDS:
+        lines.append(f"📅 Дата: <code>{today.isoformat()}</code>")
+    return "\n".join(lines)
+
+
 @router.message(F.text)
 @requires_role("editor")
 async def handle_free_text(
@@ -178,6 +255,7 @@ async def handle_free_text(
     cfg: AppConfig,
     db: AsyncIOMotorDatabase,
     user: User,
+    state: FSMContext,
     **_: object,
 ) -> None:
     """Catch-all for free text: route through LLM."""
@@ -187,8 +265,12 @@ async def handle_free_text(
 
     repo_path = cfg.repository.require_local_path()
 
-    # Call LLM
-    messages = _build_messages(cfg, text)
+    # Load session once — reused for history extraction and plant resolution
+    sess = await sessions_repo.get(db, user.tg_id)
+    history = _extract_valid_history(sess, cfg)
+
+    # Call LLM with conversation history injected
+    messages = _build_messages(cfg, text, history=history)
     try:
         intent = await _call_llm(cfg, messages)
     except LLMResponseError as exc:
@@ -201,17 +283,30 @@ async def handle_free_text(
         )
         return
 
-    # Low confidence or clarification needed
-    if intent.confidence < 0.5 or intent.clarification:
+    # 006: action-specific confidence threshold
+    threshold = (
+        cfg.llm.mutate_confidence_threshold
+        if intent.action in _MUTATING_ACTIONS
+        else cfg.llm.confidence_threshold
+    )
+    if intent.confidence < threshold or intent.clarification:
         reply = intent.clarification or "Не совсем понял. Уточни, что именно нужно сделать."
         await message.answer(reply)
+        await _save_turn(db, user.tg_id, text, reply, cfg.llm.conversation_history_max_turns * 2)
+        return
+
+    # 004: informational query — return LLM's answer without touching git
+    if intent.action == "query":
+        reply = intent.answer or intent.clarification or "Не знаю ответа. Попробуй /plants или /help."
+        await message.answer(reply)
+        await _save_turn(db, user.tg_id, text, reply, cfg.llm.conversation_history_max_turns * 2)
         return
 
     # Unknown action
     if intent.action == "unknown":
-        await message.answer(
-            "Не распознал действие. Попробуй:\n/water — полив\n/fertilize — удобрение\n/repot — пересадка"
-        )
+        reply = "Не распознал действие. Попробуй:\n/water — полив\n/fertilize — удобрение\n/repot — пересадка"
+        await message.answer(reply)
+        await _save_turn(db, user.tg_id, text, reply, cfg.llm.conversation_history_max_turns * 2)
         return
 
     # Create deferred to /new
@@ -219,19 +314,33 @@ async def handle_free_text(
         await message.answer("Для создания карточки используй /new.")
         return
 
-    # Resolve plant
+    # Resolve plant (uses target_file from intent, falls back to session)
     plant_id = await _resolve_plant_from_intent(repo_path, db, user.tg_id, intent.target_file)
     if not plant_id:
-        if intent.target_file:
-            await message.answer(f"Не нашёл растение «{intent.target_file}». Выбери через /plants.")
-        else:
-            await message.answer("Сначала выбери растение через /plants.")
+        reply = (
+            f"Не нашёл растение «{intent.target_file}». Выбери через /plants."
+            if intent.target_file
+            else "Сначала выбери растение через /plants."
+        )
+        await message.answer(reply)
+        await _save_turn(db, user.tg_id, text, reply, cfg.llm.conversation_history_max_turns * 2)
         return
 
     # Verify file exists
     path = repo_path / f"{plant_id}.md"
     if not path.exists():
         await message.answer(f"Файл карточки <code>{plant_id}.md</code> не найден.")
+        return
+
+    # 005: confirm gate for LLM-mutating actions
+    if cfg.repository.confirm_commits and intent.action in _LLM_CONFIRM_ACTIONS:
+        await state.set_state(ActionConfirmFSM.waiting_llm)
+        await state.update_data(
+            intent_data=intent.model_dump(mode="json"),
+            plant_id=plant_id,
+            tg_id=user.tg_id,
+        )
+        await message.answer(_build_llm_preview(intent, plant_id), reply_markup=confirm_keyboard())
         return
 
     # Apply intent
@@ -249,6 +358,47 @@ async def handle_free_text(
         return
 
     await message.answer(reply)
+    # Successful action: clear history so next conversation starts fresh
+    await sessions_repo.clear_history(db, user.tg_id)
+
+
+@router.callback_query(ActionConfirmFSM.waiting_llm, F.data.in_({"action:confirm", "action:cancel"}))
+@requires_role("editor")
+async def llm_confirm_callback(
+    callback: CallbackQuery,
+    state: FSMContext,
+    cfg: AppConfig,
+    db: AsyncIOMotorDatabase,
+    user: User,
+    **_: object,
+) -> None:
+    await callback.answer()
+
+    if callback.data == "action:cancel":
+        await state.clear()
+        await callback.message.edit_text("❌ Отменено.")
+        return
+
+    data = await state.get_data()
+    intent = Intent.model_validate(data["intent_data"])
+    plant_id = data["plant_id"]
+    await state.clear()
+
+    try:
+        reply = await _apply_intent(intent, plant_id, cfg, db, user)
+    except DirtyRepoError as exc:
+        logger.warning("dirty repo blocked LLM action: {}", exc)
+        await callback.message.edit_text(
+            f"🦴 Склеп в беспорядке: в репозитории есть посторонние правки.\n<code>{exc}</code>"
+        )
+        return
+    except GrimSproutError as exc:
+        logger.exception("LLM action failed")
+        await callback.message.edit_text(f"Ритуал прерван: <code>{exc}</code>")
+        return
+
+    await callback.message.edit_text(reply)
+    await sessions_repo.clear_history(db, user.tg_id)
 
 
 def register(dp: Dispatcher) -> None:

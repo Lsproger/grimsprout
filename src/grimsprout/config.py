@@ -62,10 +62,16 @@ class LLMConfig(BaseModel):
     provider: Literal["ollama"] = "ollama"
     base_url: str = "http://openwebui.lab.kekpuk.top:11434"
     model: str = "gemma3:4b"
-    temperature: float = 0.1
+    temperature: float = 1.0
+    top_p: float = 0.95
+    top_k: int = 64
     timeout_sec: int = 30
     system_prompt_file: Path
     intent_schema_file: Path
+    confidence_threshold: float = 0.5
+    mutate_confidence_threshold: float = 0.75
+    conversation_history_max_turns: int = 5  # user+assistant pairs to inject as context
+    conversation_ttl_minutes: int = 30  # idle minutes before history is discarded
 
 
 class SchedulingConfig(BaseModel):

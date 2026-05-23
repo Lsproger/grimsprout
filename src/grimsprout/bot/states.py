@@ -17,6 +17,7 @@ class NewCardFSM(StatesGroup):
 
 class ActionConfirmFSM(StatesGroup):
     waiting = State()
+    waiting_llm = State()
 
 
 class RegressionFSM(StatesGroup):

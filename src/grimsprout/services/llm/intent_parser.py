@@ -11,7 +11,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-Action = Literal["water", "fertilize", "repot", "observe", "create", "unknown"]
+Action = Literal["water", "fertilize", "repot", "observe", "create", "query", "unknown"]
 
 
 class Intent(BaseModel):
@@ -24,6 +24,7 @@ class Intent(BaseModel):
     needs_photo: bool = False
     confidence: float = Field(ge=0.0, le=1.0)
     clarification: str | None = None
+    answer: str | None = None
     create_fields: dict | None = None
     reschedule_days: int | None = None
 

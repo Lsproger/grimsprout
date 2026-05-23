@@ -27,7 +27,7 @@ repository:
     confirm_commits: true              # ask before every auto-commit
   prod:
     work_branch: "grimsprout/auto"  
-    confirm_commits: false
+    confirm_commits: true
 
 
 mongo:
@@ -41,16 +41,22 @@ mongo:
 llm:
   # Shared across all environments
   provider: "ollama"
-  temperature: 0.1
-  timeout_sec: 30
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 64
+  timeout_sec: 120
   system_prompt_file: "config/prompts/system_undertaker.md"
   intent_schema_file: "config/prompts/intent_schema.json"
+  confidence_threshold: 0.5       # observe/query/unknown
+  mutate_confidence_threshold: 0.75 # water/fertilize/repot
+  conversation_history_max_turns: 5   # keep last 5 user+assistant pairs in context
+  conversation_ttl_minutes: 30        # discard history after 30 min of inactivity
   local:
     base_url: "http://openwebui.lab.kekpuk.top:11434"
-    model: "gemma3:4b"
+    model: "gemma4:e4b"
   prod:
     base_url: "http://openwebui.lab.kekpuk.top:11434"
-    model: "gemma3:4b"
+    model: "gemma4:e4b"
 
 scheduling:
   timezone: "Europe/Warsaw"
