@@ -42,6 +42,7 @@ class RepositoryConfig(BaseModel):
     clone_dir: Path = Path("var/repo")
     https_token_env: str = "GIT_HTTPS_TOKEN"
     github_token_env: str = "GITHUB_TOKEN"
+    confirm_commits: bool = False
 
     # Populated at runtime by repo_bootstrap.ensure_workdir.
     local_path: Path | None = None

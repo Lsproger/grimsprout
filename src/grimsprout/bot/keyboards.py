@@ -13,3 +13,11 @@ def plants_keyboard(items: list[dict]) -> InlineKeyboardMarkup:
         kb.button(text=label[:60], callback_data=f"plant:set:{p['id']}")
     kb.adjust(2)
     return kb.as_markup()
+
+
+def confirm_keyboard() -> InlineKeyboardMarkup:
+    kb = InlineKeyboardBuilder()
+    kb.button(text="✅ Подтвердить", callback_data="action:confirm")
+    kb.button(text="❌ Отменить", callback_data="action:cancel")
+    kb.adjust(2)
+    return kb.as_markup()

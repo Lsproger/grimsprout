@@ -24,8 +24,10 @@ repository:
   github_token_env: "GITHUB_TOKEN"
   local:
     work_branch: "grimsprout-dev/auto"  
+    confirm_commits: true              # ask before every auto-commit
   prod:
     work_branch: "grimsprout/auto"  
+    confirm_commits: false
 
 
 mongo:
