@@ -83,3 +83,36 @@ async def test_chat_connection_error(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
     with pytest.raises(LLMResponseError, match="connection error"):
         await ollama_client.chat(BASE_URL, MODEL, MESSAGES)
+
+
+@pytest.mark.asyncio
+async def test_chat_format_schema_passed_as_dict(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When format_schema is provided, the payload 'format' field should be the dict."""
+    schema = {"type": "object", "properties": {"action": {"type": "string"}}}
+    captured: dict = {}
+
+    async def mock_post(self, url, **kwargs):  # noqa: ARG001
+        captured["payload"] = kwargs.get("json", {})
+        return _mock_response({"action": "water", "confidence": 0.9})
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+    await ollama_client.chat(BASE_URL, MODEL, MESSAGES, format_schema=schema)
+    assert captured["payload"]["format"] == schema
+    assert captured["payload"]["options"]["top_p"] == 0.95
+    assert captured["payload"]["options"]["top_k"] == 64
+
+
+@pytest.mark.asyncio
+async def test_chat_no_format_schema_uses_json_string(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When format_schema is None (default), 'format' should be the string 'json'."""
+    captured: dict = {}
+
+    async def mock_post(self, url, **kwargs):  # noqa: ARG001
+        captured["payload"] = kwargs.get("json", {})
+        return _mock_response({"action": "water", "confidence": 0.9})
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+    await ollama_client.chat(BASE_URL, MODEL, MESSAGES)
+    assert captured["payload"]["format"] == "json"
+    assert captured["payload"]["options"]["top_p"] == 0.95
+    assert captured["payload"]["options"]["top_k"] == 64

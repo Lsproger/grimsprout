@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 Role = Literal["admin", "editor", "publisher", "viewer"]
 ScheduleKind = Literal["water", "fertilize", "repot"]
+ConversationRole = Literal["user", "assistant"]
 
 
 class User(BaseModel):
@@ -19,9 +20,16 @@ class User(BaseModel):
     added_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 
+class ConversationTurn(BaseModel):
+    role: ConversationRole
+    content: str
+    ts: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
+
+
 class Session(BaseModel):
     tg_id: int
     current_plant_id: str | None = None
+    conversation_history: list[ConversationTurn] = Field(default_factory=list)
     updated_at: datetime = Field(default_factory=lambda: datetime.now(tz=UTC))
 
 

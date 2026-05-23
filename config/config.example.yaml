@@ -40,12 +40,16 @@ mongo:
 llm:
   # Shared across all environments
   provider: "ollama"
-  temperature: 0.1
+  temperature: 1.0
+  top_p: 0.95
+  top_k: 64
   timeout_sec: 30
   system_prompt_file: "config/prompts/system_undertaker.md"
   intent_schema_file: "config/prompts/intent_schema.json"
   confidence_threshold: 0.5       # observe/query/unknown
   mutate_confidence_threshold: 0.75 # water/fertilize/repot
+  conversation_history_max_turns: 5   # keep last 5 user+assistant pairs in context
+  conversation_ttl_minutes: 30        # discard history after 30 min of inactivity
   local:
     base_url: "http://localhost:11434"
     model: "llama3"

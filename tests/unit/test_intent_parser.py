@@ -24,11 +24,12 @@ def test_parse_water() -> None:
 
 
 def test_parse_query_action() -> None:
-    """'query' is a valid action; clarification carries the LLM's answer."""
-    raw = _make_raw(action="query", confidence=0.9, clarification="У вас 5 растений.")
+    """'query' action: answer field carries the LLM's response text."""
+    raw = _make_raw(action="query", confidence=0.9, answer="У вас 5 растений.")
     intent = parse(raw)
     assert intent.action == "query"
-    assert intent.clarification == "У вас 5 растений."
+    assert intent.answer == "У вас 5 растений."
+    assert intent.clarification is None
     assert intent.target_file is None
 
 
@@ -57,3 +58,20 @@ def test_parse_health_delta_bounds() -> None:
 
     with pytest.raises(ValidationError):
         parse(_make_raw(health_delta=-4))  # min is -3
+
+
+def test_parse_answer_field_present() -> None:
+    """answer field is accepted and distinct from clarification."""
+    raw = _make_raw(action="query", confidence=0.9, answer="Ответ на вопрос.", clarification=None)
+    intent = parse(raw)
+    assert intent.answer == "Ответ на вопрос."
+    assert intent.clarification is None
+
+
+def test_parse_clarification_for_low_confidence_action() -> None:
+    """clarification is a question to the user when intent is ambiguous."""
+    raw = _make_raw(action="water", confidence=0.3, clarification="Какое растение полить?", answer=None)
+    intent = parse(raw)
+    assert intent.clarification == "Какое растение полить?"
+    assert intent.answer is None
+    assert intent.confidence < 0.5
