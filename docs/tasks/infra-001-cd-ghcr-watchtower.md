@@ -1,7 +1,7 @@
 # CI/CD: автообновление через GHCR + Watchtower
 
 **Фаза**: infra
-**Статус**: backlog
+**Статус**: done
 **Приоритет**: high
 **Зависимости**: нет
 
@@ -23,12 +23,12 @@ graph LR
 ```
 
 ## Критерии готовности
-- [ ] В CI добавлена джоба `build-and-push` (только на `master`, после успешных lint+test)
-- [ ] Образ пушится в `ghcr.io/lsproger/grimsprout:latest` + тег с SHA коммита
-- [ ] `docker-compose.yaml` на сервере использует образ из GHCR вместо локального build
-- [ ] Watchtower запущен как сервис, проверяет обновления каждые 5 минут
-- [ ] Watchtower аутентифицирован в GHCR (PAT с `read:packages`)
-- [ ] Первый деплой через GHCR прошёл успешно
+- [x] В CI добавлена джоба `build-and-push` (только на `master`, после успешных lint+test)
+- [x] Образ пушится в `ghcr.io/lsproger/grimsprout:latest` + тег с SHA коммита
+- [x] `docker-compose.yaml` на сервере использует образ из GHCR вместо локального build
+- [x] Watchtower запущен как сервис, проверяет обновления каждые 5 минут
+- [x] Watchtower аутентифицирован в GHCR (PAT с `read:packages`)
+- [x] Первый деплой через GHCR прошёл успешно
 
 ## Заметки
 

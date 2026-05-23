@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "GrimSprout: local",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "grimsprout",
+            "cwd": "${workspaceFolder}",
+            "envFile": "${workspaceFolder}/.env",
+            "env": {
+                "GRIMSPROUT_CONFIG": "${workspaceFolder}/config/config.yaml",
+                "GRIMSPROUT_ENV": "local"
+            },
+            "justMyCode": false
+        }
+    ]
+}

@@ -1,38 +1,64 @@
+# Active environment profile: local | prod
+# Override without editing this file: GRIMSPROUT_ENV=prod python -m grimsprout
+env: local
+
 telegram:
-  token_env: "BOT_TOKEN"
-  bootstrap_admin_tg_id: 123456789   # <-- замени на свой Telegram ID
+  bootstrap_admin_tg_id: 123456789  # <-- замени на свой Telegram ID
   parse_mode: "HTML"
+  local:
+    token_env: "BOT_TOKEN_DEV"      # dev-бот токен в .env
+  prod:
+    token_env: "BOT_TOKEN"          # prod-бот токен в .env
 
 repository:
-  # Either a local path or a git URL (git@host:owner/repo.git, https://..., ssh://...).
-  # If a URL is given, the repo is cloned into clone_dir/<repo-name> on startup.
-  path: "/opt/data/trava"
+  # Shared across all environments
   images_dir: "images"
   template_file: "_template.md"
   git_remote: "origin"
   git_branch: "master"           # base branch; bot never writes to it directly
   work_branch: "grimsprout/auto"  # bot-only branch; all auto-commits land here
   clone_dir: "var/repo"           # relative to project root; used when path is a URL
-  https_token_env: "GIT_HTTPS_TOKEN"  # env var for HTTPS clone/push auth
-  github_token_env: "GITHUB_TOKEN"    # env var for /pr (GitHub API)
+  local:
+    path: "var/repo/trava"        # local checkout — no clone on startup
+    https_token_env: "GIT_HTTPS_TOKEN"
+    github_token_env: "GITHUB_TOKEN"
+    confirm_commits: true         # ask before every auto-commit in dev
+  prod:
+    path: "https://github.com/yourname/trava.git"  # cloned on startup
+    https_token_env: "GIT_HTTPS_TOKEN"
+    github_token_env: "GITHUB_TOKEN"
+    confirm_commits: false
 
 mongo:
-  uri_env: "MONGO_URI"
-  database: "grimsprout"
+  local:
+    uri_env: "MONGO_URI"
+    database: "grimsprout_dev"
+  prod:
+    uri_env: "MONGO_URI"
+    database: "grimsprout"
 
 llm:
+  # Shared across all environments
   provider: "ollama"
-  base_url: "http://localhost:11434"
-  model: "llama3"
   temperature: 0.1
   timeout_sec: 30
   system_prompt_file: "config/prompts/system_undertaker.md"
   intent_schema_file: "config/prompts/intent_schema.json"
+  local:
+    base_url: "http://localhost:11434"
+    model: "llama3"
+  prod:
+    base_url: "http://ollama.yourdomain.com:11434"
+    model: "llama3"
 
 scheduling:
   timezone: "Europe/Warsaw"
   default_snooze_days: 1
 
 logging:
-  level: "INFO"
-  json: false
+  local:
+    level: "DEBUG"
+    json: false
+  prod:
+    level: "INFO"
+    json: false

@@ -42,6 +42,7 @@ class RepositoryConfig(BaseModel):
     clone_dir: Path = Path("var/repo")
     https_token_env: str = "GIT_HTTPS_TOKEN"
     github_token_env: str = "GITHUB_TOKEN"
+    confirm_commits: bool = False
 
     # Populated at runtime by repo_bootstrap.ensure_workdir.
     local_path: Path | None = None
@@ -89,10 +90,11 @@ class AppConfig(BaseModel):
 
 
 class _EnvSettings(BaseSettings):
-    """Loads BOT_TOKEN / MONGO_URI from environment or .env."""
+    """Loads BOT_TOKEN / MONGO_URI / MONGO_TEST_URI from environment or .env."""
 
     BOT_TOKEN: str = ""
     MONGO_URI: str = "mongodb://localhost:27017"
+    MONGO_TEST_URI: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -104,12 +106,43 @@ def _config_path() -> Path:
     return (Path(__file__).resolve().parents[2] / "config" / "config.yaml").resolve()
 
 
+def _resolve_env(raw: dict) -> dict:
+    """Merge the active environment profile into each config section.
+
+    The active env name is resolved (highest priority first) from:
+    1. ``GRIMSPROUT_ENV`` OS environment variable
+    2. Top-level ``env`` key in the YAML
+
+    For each section: if the section dict contains a key matching the active
+    env name whose value is a dict, that sub-dict is merged over the shared
+    flat fields (non-dict values in the section).  Sections that do not
+    contain the active env key pass through unchanged.
+
+    If no env name is found the raw dict is returned as-is for full backwards
+    compatibility with flat config files.
+    """
+    env_name: str | None = os.environ.get("GRIMSPROUT_ENV") or raw.get("env")
+    if not env_name:
+        return raw
+
+    result: dict = {}
+    for key, value in raw.items():
+        if key == "env":
+            continue
+        if isinstance(value, dict) and isinstance(value.get(env_name), dict):
+            flat = {k: v for k, v in value.items() if not isinstance(v, dict)}
+            result[key] = {**flat, **value[env_name]}
+        else:
+            result[key] = value
+    return result
+
+
 @lru_cache(maxsize=1)
 def load_config() -> AppConfig:
     path = _config_path()
     with path.open("r", encoding="utf-8") as fh:
         raw = yaml.safe_load(fh)
-    return AppConfig.model_validate(raw)
+    return AppConfig.model_validate(_resolve_env(raw))
 
 
 @lru_cache(maxsize=1)
