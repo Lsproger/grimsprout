@@ -51,12 +51,9 @@ llm:
   mutate_confidence_threshold: 0.75 # water/fertilize/repot
   conversation_history_max_turns: 5   # keep last 5 user+assistant pairs in context
   conversation_ttl_minutes: 30        # discard history after 30 min of inactivity
-  local:
-    base_url: "http://openwebui.lab.kekpuk.top:11434"
-    model: "gemma4:e4b"
-  prod:
-    base_url: "http://openwebui.lab.kekpuk.top:11434"
-    model: "gemma4:e4b"
+  model: "gemma4:e4b"
+  base_url: "http://openwebui.lab.kekpuk.top:11434"
+ 
 
 scheduling:
   timezone: "Europe/Warsaw"

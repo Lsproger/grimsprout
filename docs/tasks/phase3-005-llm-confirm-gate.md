@@ -1,7 +1,7 @@
 # Phase 3E: confirm_commits gate для LLM-роутера
 
 **Фаза**: 3
-**Статус**: backlog
+**Статус**: done
 **Приоритет**: high
 **Зависимости**: phase3-003, phase2 (commit confirmation)
 

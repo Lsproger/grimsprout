@@ -12,7 +12,10 @@ from aiogram.types import BotCommand
 from loguru import logger
 
 from grimsprout.bot.handlers import actions, admin, llm_router, plants, start
+from grimsprout.bot.handlers import edit as edit_handlers
 from grimsprout.bot.handlers import git as git_handlers
+from grimsprout.bot.handlers import info as info_handlers
+from grimsprout.bot.handlers import new_card as new_card_handlers
 from grimsprout.bot.handlers import photo as photo_handlers
 from grimsprout.bot.middlewares.auth import AuthMiddleware
 from grimsprout.config import load_config
@@ -26,9 +29,12 @@ BOT_COMMANDS = [
     BotCommand(command="help", description="Справка"),
     BotCommand(command="whoami", description="Кто я в склепе"),
     BotCommand(command="plants", description="Список растений"),
+    BotCommand(command="info", description="Карточка растения"),
     BotCommand(command="water", description="Зафиксировать полив"),
     BotCommand(command="fertilize", description="Зафиксировать удобрение"),
     BotCommand(command="repot", description="Зафиксировать пересадку"),
+    BotCommand(command="edit", description="Редактировать поле карточки"),
+    BotCommand(command="new", description="Новое растение"),
     BotCommand(command="push", description="Отправить ветку бота в remote"),
     BotCommand(command="pr", description="Открыть PR в базовую ветку"),
 ]
@@ -64,7 +70,10 @@ async def run() -> None:
 
     start.register(dp)
     plants.register(dp)
+    info_handlers.register(dp)
     actions.register(dp)
+    edit_handlers.register(dp)
+    new_card_handlers.register(dp)
     admin.register(dp)
     git_handlers.register(dp)
     photo_handlers.register(dp)
