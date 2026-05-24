@@ -40,8 +40,7 @@ class RepositoryConfig(BaseModel):
     git_branch: str = "master"
     work_branch: str = "grimsprout/auto"
     clone_dir: Path = Path("var/repo")
-    https_token_env: str = "GIT_HTTPS_TOKEN"
-    github_token_env: str = "GITHUB_TOKEN"
+    github_trava_token_env: str = "GIT_TRAVA_TOKEN"
     confirm_commits: bool = False
 
     # Populated at runtime by repo_bootstrap.ensure_workdir.
