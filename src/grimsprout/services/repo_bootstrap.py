@@ -15,7 +15,7 @@ local ``git_branch`` as fallback) the first time. We never write to
 Auth:
 - SSH URLs: pass through unmodified; relies on the host's ``ssh-agent`` /
   ``~/.ssh/config`` (``GIT_SSH_COMMAND`` is also honoured by GitPython).
-- HTTPS URLs: if the ``https_token_env`` env var is set, the token is
+- HTTPS URLs: if the ``github_trava_token_env`` env var is set, the token is
   injected into the clone URL once and the remote's ``origin`` URL is then
   rewritten to the original (token-free) value so the secret is never
   persisted to ``.git/config``. ``GIT_TERMINAL_PROMPT=0`` is exported to
@@ -74,7 +74,7 @@ def _clone(cfg: AppConfig, url: GitUrl, target: Path) -> git.Repo:
             ) from exc
 
     # https
-    token = os.environ.get(cfg.repository.https_token_env, "").strip()
+    token = os.environ.get(cfg.repository.github_trava_token_env, "").strip()
     if not token:
         # Try a plain clone first (works for public repos / cached creds).
         logger.info("cloning {} via HTTPS (no token) → {}", url.raw, target)
@@ -83,7 +83,7 @@ def _clone(cfg: AppConfig, url: GitUrl, target: Path) -> git.Repo:
         except git.GitCommandError as exc:
             raise RepoBootstrapError(
                 f"HTTPS clone failed for {url.raw} and "
-                f"${cfg.repository.https_token_env} is not set: {exc.stderr or exc}"
+                f"${cfg.repository.github_trava_token_env} is not set: {exc.stderr or exc}"
             ) from exc
 
     logger.info("cloning {} via HTTPS (token) → {}", url.raw, target)

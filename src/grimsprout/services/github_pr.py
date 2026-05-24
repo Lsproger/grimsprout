@@ -8,7 +8,7 @@ Only the minimal subset needed by the bot is implemented:
   return its URL instead of erroring.
 
 Auth uses a Bearer token taken from the env var configured by
-``repository.github_token_env`` (default ``GITHUB_TOKEN``).
+``repository.github_trava_token_env`` (default ``GIT_TRAVA_TOKEN``).
 """
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ def open_pr(
     not GitHub.
     """
     if not token:
-        raise PRError("GitHub token is empty; set the configured github_token_env")
+        raise PRError("GitHub token is empty; set the configured github_trava_token_env")
 
     url = _resolve_owner_repo(configured_path, repo_path)
     if url.host not in ("github.com", "api.github.com"):

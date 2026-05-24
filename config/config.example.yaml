@@ -20,14 +20,12 @@ repository:
   clone_dir: "var/repo"           # relative to project root; used when path is a URL
   local:
     path: "var/repo/trava"        # local checkout — no clone on startup
-    https_token_env: "GIT_HTTPS_TOKEN"
-    github_token_env: "GITHUB_TOKEN"
+    github_trava_token_env: "GIT_TRAVA_TOKEN"
     confirm_commits: true         # ask before every auto-commit in dev
   prod:
     path: "https://github.com/yourname/trava.git"  # cloned on startup
-    https_token_env: "GIT_HTTPS_TOKEN"
-    github_token_env: "GITHUB_TOKEN"
-    confirm_commits: false
+    github_trava_token_env: "GIT_TRAVA_TOKEN"
+    confirm_commits: true
 
 mongo:
   local:

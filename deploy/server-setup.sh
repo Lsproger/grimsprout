@@ -21,8 +21,8 @@ if [[ ! -f "$INSTALL_DIR/.env" ]]; then
   cat > "$INSTALL_DIR/.env" <<'EOF'
 BOT_TOKEN=
 MONGO_URI=mongodb://mongo:27017
-GIT_HTTPS_TOKEN=
-GITHUB_TOKEN=
+GH_TOKEN=
+GIT_TRAVA_TOKEN=
 EOF
   echo "[!] Created $INSTALL_DIR/.env — fill in BOT_TOKEN and tokens"
 else

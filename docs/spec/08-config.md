@@ -39,12 +39,10 @@ repository:
   clone_dir: "var/repo"
   local:
     path: "var/repo/trava"           # локальный checkout
-    https_token_env: "GIT_HTTPS_TOKEN"
-    github_token_env: "GITHUB_TOKEN"
+    github_trava_token_env: "GIT_TRAVA_TOKEN"
   prod:
     path: "https://github.com/owner/trava.git"  # клонируется при старте
-    https_token_env: "GIT_HTTPS_TOKEN"
-    github_token_env: "GITHUB_TOKEN"
+    github_trava_token_env: "GIT_TRAVA_TOKEN"
 
 mongo:
   local:
