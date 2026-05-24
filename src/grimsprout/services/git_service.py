@@ -90,11 +90,14 @@ def _has_initial_commit_pending(repo: git.Repo) -> bool:
         return True
 
 
-def push(repo_path: Path, remote: str, branch: str) -> None:
+def push(repo_path: Path, remote: str, branch: str, token: str = "") -> None:
     """Push ``branch`` to ``remote`` with upstream tracking.
 
     Only the bot's ``work_branch`` should ever be passed here — never the
     base branch. Caller is responsible for that policy.
+
+    If ``token`` is provided and the remote URL is HTTPS, it is temporarily
+    injected into the URL for the duration of the push, then removed.
     """
     _wait_lock(repo_path)
     repo = _open(repo_path)
@@ -102,10 +105,29 @@ def push(repo_path: Path, remote: str, branch: str) -> None:
         remote_obj = repo.remote(remote)
     except ValueError as exc:
         raise GitError(f"remote '{remote}' not configured") from exc
+
+    original_url = remote_obj.url
+    auth_url: str | None = None
+    if token and original_url.startswith("https://"):
+        # Strip any existing credentials from the URL before injecting token.
+        from urllib.parse import urlparse, urlunparse
+
+        parsed = urlparse(original_url)
+        auth_url = urlunparse(
+            parsed._replace(
+                netloc=f"x-access-token:{token}@{parsed.hostname}{f':{parsed.port}' if parsed.port else ''}"
+            )
+        )
+        remote_obj.set_url(auth_url)
+
     try:
         results = remote_obj.push(refspec=f"{branch}:{branch}", set_upstream=True)
     except git.GitCommandError as exc:
         raise GitError(f"git push failed: {exc.stderr or exc}") from exc
+    finally:
+        if auth_url is not None:
+            remote_obj.set_url(original_url)
+
     for r in results:
         if r.flags & r.ERROR:
             raise GitError(f"push rejected for {r.local_ref}: {r.summary}")
