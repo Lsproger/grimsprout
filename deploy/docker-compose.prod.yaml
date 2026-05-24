@@ -5,9 +5,8 @@ services:
     env_file:
       - /opt/grimsprout/.env
     environment:
-      GRIMSPROUT_CONFIG: "/app/config/config.yaml"
+      GRIMSPROUT_ENV: "prod"
     volumes:
-      - /opt/grimsprout/config/config.yaml:/app/config/config.yaml:ro
       - bot_repo:/app/var/repo
 
   watchtower:
