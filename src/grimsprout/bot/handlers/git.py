@@ -37,7 +37,7 @@ async def cmd_push(
     repo_path = cfg.repository.require_local_path()
     branch = cfg.repository.work_branch
     remote = cfg.repository.git_remote
-    token = os.environ.get(cfg.repository.https_token_env, "")
+    token = os.environ.get(cfg.repository.github_trava_token_env, "")
     try:
         git_service.push(repo_path, remote, branch, token=token)
     except GrimSproutError as exc:
@@ -75,14 +75,14 @@ async def cmd_pr(
 
     # Make sure the branch is on the remote first; otherwise GitHub will
     # reject the PR with "head does not exist".
-    token = os.environ.get(cfg.repository.https_token_env, "")
+    token = os.environ.get(cfg.repository.github_trava_token_env, "")
     try:
         git_service.push(repo_path, cfg.repository.git_remote, head, token=token)
     except GrimSproutError as exc:
         await message.answer(f"🪦 Push перед PR не удался: <code>{exc}</code>")
         return
 
-    token = os.environ.get(cfg.repository.github_token_env, "").strip()
+    token = os.environ.get(cfg.repository.github_trava_token_env, "").strip()
     title = f"GrimSprout: auto changes from {head}"
     body = (
         "Автоматически собранные изменения от GrimSprout.\n\n"
