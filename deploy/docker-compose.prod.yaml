@@ -7,7 +7,7 @@ services:
     environment:
       GRIMSPROUT_CONFIG: "/app/config/config.yaml"
     volumes:
-      - /opt/grimsprout/config:/app/config:ro
+      - /opt/grimsprout/config/config.yaml:/app/config/config.yaml:ro
       - bot_repo:/app/var/repo
 
   watchtower:
