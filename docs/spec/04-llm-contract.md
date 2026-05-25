@@ -19,7 +19,7 @@
     "target_file": { "type": ["string", "null"] },
     "action": {
       "type": "string",
-      "enum": ["water", "fertilize", "repot", "observe", "create", "unknown"]
+      "enum": ["water", "fertilize", "repot", "observe", "create", "query", "unknown"]
     },
     "health_delta": { "type": ["integer", "null"], "minimum": -3, "maximum": 3 },
     "tags_add": { "type": "array", "items": { "type": "string" } },
@@ -60,3 +60,23 @@
 4. (Опционально) `system` с пометкой «контекст: регрессия по {kind}» для сценария регрессии.
 
 Фото в LLM на MVP **не** передаются (multimodal — задача отдельного `PhotoAnalyzer`, который пока заглушка).
+
+## 4.7. Метрики производительности (`LLMStats`)
+
+Оллама возвращает поля производительности в **корне** тела ответа (не внутри `message.content`). `ollama_client.chat()` извлекает их и возвращает вместе с содержимым в виде `tuple[dict, LLMStats]`.
+
+| Поле | Источник (Ollama body) | Описание |
+|---|---|---|
+| `tokens_per_sec` | `eval_count / eval_duration × 10⁹` | Скорость генерации, tok/s |
+| `eval_count` | `eval_count` | Количество сгенерированных токенов |
+| `prompt_eval_count` | `prompt_eval_count` | Количество токенов промпта |
+| `total_duration_ms` | `total_duration / 10⁶` | Полное время запроса, мс |
+
+Все поля — `None`, если Ollama не вернула соответствующие значения.
+
+Статистика логируется на уровне **INFO** при каждом вызове.
+
+Опциональный вывод в чат управляется флагом `llm.show_perf_stats` (см. `08-config.md`). При включённом флаге к ответам на `query`-запросы и к результатам мутирующих действий добавляется строка:
+```
+⚡ 42 tok/s · 38 tok
+```
