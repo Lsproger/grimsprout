@@ -100,6 +100,8 @@ class _EnvSettings(BaseSettings):
     BOT_TOKEN: str = ""
     MONGO_URI: str = "mongodb://localhost:27017"
     MONGO_TEST_URI: str = ""
+    # Override llm.model at runtime without rebuilding the image.
+    LLM_MODEL: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -147,7 +149,10 @@ def load_config() -> AppConfig:
     path = _config_path()
     with path.open("r", encoding="utf-8") as fh:
         raw = yaml.safe_load(fh)
-    return AppConfig.model_validate(_resolve_env(raw))
+    resolved = _resolve_env(raw)
+    if llm_model := load_env().LLM_MODEL:
+        resolved.setdefault("llm", {})["model"] = llm_model
+    return AppConfig.model_validate(resolved)
 
 
 @lru_cache(maxsize=1)
