@@ -106,6 +106,28 @@ def test_load_env_reads_environment(monkeypatch: pytest.MonkeyPatch, tmp_path: P
     assert env.MONGO_URI == "mongodb://test:27017"
 
 
+def test_llm_model_env_override(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """LLM_MODEL env var overrides llm.model from YAML without a rebuild."""
+    cfg_path = _write_config(tmp_path, VALID_YAML)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("GRIMSPROUT_CONFIG", str(cfg_path))
+    monkeypatch.setenv("LLM_MODEL", "gemma3:4b")
+
+    cfg = cfg_module.load_config()
+    assert cfg.llm.model == "gemma3:4b"
+
+
+def test_llm_model_env_override_empty_keeps_yaml(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """When LLM_MODEL is unset, llm.model comes from YAML."""
+    cfg_path = _write_config(tmp_path, VALID_YAML)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("GRIMSPROUT_CONFIG", str(cfg_path))
+    monkeypatch.delenv("LLM_MODEL", raising=False)
+
+    cfg = cfg_module.load_config()
+    assert cfg.llm.model == "llama3"  # value from VALID_YAML
+
+
 # ---------------------------------------------------------------------------
 # Env-profile branching tests
 # ---------------------------------------------------------------------------
