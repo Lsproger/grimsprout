@@ -71,6 +71,7 @@ class LLMConfig(BaseModel):
     mutate_confidence_threshold: float = 0.75
     conversation_history_max_turns: int = 5  # user+assistant pairs to inject as context
     conversation_ttl_minutes: int = 30  # idle minutes before history is discarded
+    show_perf_stats: bool = False  # append token/sec footer to chat replies
 
 
 class SchedulingConfig(BaseModel):

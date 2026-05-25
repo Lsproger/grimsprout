@@ -24,6 +24,7 @@ from grimsprout.services import git_service
 from grimsprout.services.auth_service import requires_role
 from grimsprout.services.llm import ollama_client
 from grimsprout.services.llm.intent_parser import Intent, parse
+from grimsprout.services.llm.ollama_client import LLMStats
 from grimsprout.utils.errors import DirtyRepoError, GrimSproutError, LLMResponseError
 
 router = Router(name="llm_router")
@@ -132,10 +133,10 @@ async def _resolve_plant_from_intent(
     return None
 
 
-async def _call_llm(cfg: AppConfig, messages: list[dict[str, str]]) -> Intent:
+async def _call_llm(cfg: AppConfig, messages: list[dict[str, str]]) -> tuple[Intent, LLMStats]:
     """Call LLM and parse intent, with one retry on parse failure."""
     schema = _load_intent_schema(cfg)
-    raw = await ollama_client.chat(
+    raw, stats = await ollama_client.chat(
         cfg.llm.base_url,
         cfg.llm.model,
         messages,
@@ -147,11 +148,11 @@ async def _call_llm(cfg: AppConfig, messages: list[dict[str, str]]) -> Intent:
     )
     raw_str = raw if isinstance(raw, str) else json.dumps(raw)
     try:
-        return parse(raw_str)
+        return parse(raw_str), stats
     except ValidationError:
         # One retry with format reminder
         messages_retry = [*messages, RETRY_MSG]
-        raw2 = await ollama_client.chat(
+        raw2, stats2 = await ollama_client.chat(
             cfg.llm.base_url,
             cfg.llm.model,
             messages_retry,
@@ -162,7 +163,7 @@ async def _call_llm(cfg: AppConfig, messages: list[dict[str, str]]) -> Intent:
             top_k=cfg.llm.top_k,
         )
         raw_str2 = raw2 if isinstance(raw2, str) else json.dumps(raw2)
-        return parse(raw_str2)  # raise if still invalid
+        return parse(raw_str2), stats2  # raise if still invalid
 
 
 async def _apply_intent(
@@ -233,6 +234,16 @@ async def _apply_intent(
     return "\n".join(parts)
 
 
+def _perf_footer(stats: LLMStats) -> str:
+    """Build a one-line perf footer for chat replies, e.g. ⚡ 42 tok/s · 38 tok."""
+    parts: list[str] = []
+    if stats.tokens_per_sec is not None:
+        parts.append(f"{stats.tokens_per_sec:.0f} tok/s")
+    if stats.eval_count is not None:
+        parts.append(f"{stats.eval_count} tok")
+    return "⚡ " + " · ".join(parts) if parts else ""
+
+
 def _build_llm_preview(intent: Intent, plant_id: str) -> str:
     """Build a confirmation preview message for LLM-triggered actions."""
     today = date.today()
@@ -272,7 +283,7 @@ async def handle_free_text(
     # Call LLM with conversation history injected
     messages = _build_messages(cfg, text, history=history)
     try:
-        intent = await _call_llm(cfg, messages)
+        intent, llm_stats = await _call_llm(cfg, messages)
     except LLMResponseError as exc:
         logger.warning("LLM error: {}", exc)
         await message.answer("🪦 LLM не отвечает. Попробуй позже или используй прямые команды.")
@@ -298,6 +309,8 @@ async def handle_free_text(
     # 004: informational query — return LLM's answer without touching git
     if intent.action == "query":
         reply = intent.answer or intent.clarification or "Не знаю ответа. Попробуй /plants или /help."
+        if cfg.llm.show_perf_stats and (footer := _perf_footer(llm_stats)):
+            reply = f"{reply}\n{footer}"
         await message.answer(reply)
         await _save_turn(db, user.tg_id, text, reply, cfg.llm.conversation_history_max_turns * 2)
         return
@@ -357,6 +370,8 @@ async def handle_free_text(
         await message.answer(f"Ритуал прерван: <code>{exc}</code>")
         return
 
+    if cfg.llm.show_perf_stats and (footer := _perf_footer(llm_stats)):
+        reply = f"{reply}\n{footer}"
     await message.answer(reply)
     # Successful action: clear history so next conversation starts fresh
     await sessions_repo.clear_history(db, user.tg_id)

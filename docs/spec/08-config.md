@@ -59,6 +59,7 @@ llm:
   timeout_sec: 30
   system_prompt_file: "config/prompts/system_undertaker.md"
   intent_schema_file: "config/prompts/intent_schema.json"
+  show_perf_stats: false  # если true — добавляет "⚡ N tok/s · M tok" к ответам бота
   local:
     base_url: "http://localhost:11434"
     model: "llama3"

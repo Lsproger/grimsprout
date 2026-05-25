@@ -48,6 +48,7 @@ llm:
   mutate_confidence_threshold: 0.75 # water/fertilize/repot
   conversation_history_max_turns: 5   # keep last 5 user+assistant pairs in context
   conversation_ttl_minutes: 30        # discard history after 30 min of inactivity
+  show_perf_stats: true
   local:
     base_url: "http://localhost:11434"
     model: "llama3"

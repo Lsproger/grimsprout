@@ -46,6 +46,7 @@
 - [x] `/info` — просмотр карточки растения (YAML + последние changelog)
 - [x] `/edit` — редактирование полей карточки (quick mode + interactive FSM, 12 полей)
 - [x] `/new` — FSM-создание новой карточки
+- [x] LLM performance stats — логирование `tokens_per_sec` / `eval_count` в INFO; флаг `llm.show_perf_stats` для вывода футера `⚡ N tok/s · M tok` в ответах бота
 - [ ] Обработка edge-cases: LLM не вернула JSON, git lock timeout
 - [ ] Фирменная «загробная» стилистика ответов
 

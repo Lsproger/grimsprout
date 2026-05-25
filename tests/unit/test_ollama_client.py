@@ -8,15 +8,29 @@ import httpx
 import pytest
 
 from grimsprout.services.llm import ollama_client
+from grimsprout.services.llm.ollama_client import LLMStats
 from grimsprout.utils.errors import LLMResponseError
 
 BASE_URL = "http://localhost:11434"
 MODEL = "gemma3:4b"
 MESSAGES = [{"role": "user", "content": "hello"}]
 
+_MOCK_EVAL_COUNT = 38
+_MOCK_EVAL_DURATION = 905_000_000  # nanoseconds
+_MOCK_PROMPT_EVAL_COUNT = 26
+_MOCK_TOTAL_DURATION = 1_300_000_000  # nanoseconds
 
-def _mock_response(content_dict: dict) -> httpx.Response:
-    body = {"message": {"role": "assistant", "content": json.dumps(content_dict)}, "done": True}
+
+def _mock_response(content_dict: dict, *, include_stats: bool = True) -> httpx.Response:
+    body: dict = {"message": {"role": "assistant", "content": json.dumps(content_dict)}, "done": True}
+    if include_stats:
+        body.update(
+            eval_count=_MOCK_EVAL_COUNT,
+            eval_duration=_MOCK_EVAL_DURATION,
+            prompt_eval_count=_MOCK_PROMPT_EVAL_COUNT,
+            prompt_eval_duration=350_000_000,
+            total_duration=_MOCK_TOTAL_DURATION,
+        )
     return httpx.Response(200, json=body, request=httpx.Request("POST", "http://localhost:11434/api/chat"))
 
 
@@ -28,8 +42,9 @@ async def test_chat_success(monkeypatch: pytest.MonkeyPatch) -> None:
         return _mock_response(expected)
 
     monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
-    result = await ollama_client.chat(BASE_URL, MODEL, MESSAGES)
+    result, stats = await ollama_client.chat(BASE_URL, MODEL, MESSAGES)
     assert result == expected
+    assert isinstance(stats, LLMStats)
 
 
 @pytest.mark.asyncio
@@ -116,3 +131,35 @@ async def test_chat_no_format_schema_uses_json_string(monkeypatch: pytest.Monkey
     assert captured["payload"]["format"] == "json"
     assert captured["payload"]["options"]["top_p"] == 0.95
     assert captured["payload"]["options"]["top_k"] == 64
+
+
+@pytest.mark.asyncio
+async def test_chat_stats_computed(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stats are correctly computed from Ollama response fields."""
+
+    async def mock_post(self, url, **kwargs):  # noqa: ARG001
+        return _mock_response({"action": "water", "confidence": 0.9})
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+    _, stats = await ollama_client.chat(BASE_URL, MODEL, MESSAGES)
+    expected_tps = _MOCK_EVAL_COUNT / _MOCK_EVAL_DURATION * 1e9
+    assert stats.tokens_per_sec is not None
+    assert abs(stats.tokens_per_sec - expected_tps) < 0.01
+    assert stats.eval_count == _MOCK_EVAL_COUNT
+    assert stats.prompt_eval_count == _MOCK_PROMPT_EVAL_COUNT
+    assert stats.total_duration_ms is not None
+    assert abs(stats.total_duration_ms - _MOCK_TOTAL_DURATION / 1e6) < 0.01
+
+
+@pytest.mark.asyncio
+async def test_chat_stats_missing_fields(monkeypatch: pytest.MonkeyPatch) -> None:
+    """When Ollama omits token count fields, stats fields are None."""
+
+    async def mock_post(self, url, **kwargs):  # noqa: ARG001
+        return _mock_response({"action": "water", "confidence": 0.9}, include_stats=False)
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", mock_post)
+    _, stats = await ollama_client.chat(BASE_URL, MODEL, MESSAGES)
+    assert stats.tokens_per_sec is None
+    assert stats.eval_count is None
+    assert stats.total_duration_ms is None
