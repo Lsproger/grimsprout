@@ -32,11 +32,29 @@ def test_append_entry_with_photo_adds_image_line(tmp_path: Path) -> None:
     card = tmp_path / "card.md"
     _make_card(card, "## Журнал изменений (Changelog)\n\n")
 
-    changelog.append_entry(card, date(2026, 5, 18), "С фото.", photo_rel="images/x/abc.jpg")
+    changelog.append_entry(card, date(2026, 5, 18), "С фото.", photo_rels=["images/x/abc.jpg"])
 
     _, body = md_parser.read(card)
     assert "- **2026-05-18**: С фото." in body
     assert "  ![](images/x/abc.jpg)" in body
+
+
+def test_append_entry_with_multiple_photos(tmp_path: Path) -> None:
+    card = tmp_path / "card.md"
+    _make_card(card, "## Журнал изменений (Changelog)\n\n")
+
+    changelog.append_entry(
+        card,
+        date(2026, 5, 27),
+        "Три фото.",
+        photo_rels=["images/p_1.jpg", "images/p_2.jpg", "images/p_3.jpg"],
+    )
+
+    _, body = md_parser.read(card)
+    assert "- **2026-05-27**: Три фото." in body
+    assert "  ![](images/p_1.jpg)" in body
+    assert "  ![](images/p_2.jpg)" in body
+    assert "  ![](images/p_3.jpg)" in body
 
 
 def test_append_entry_creates_section_when_missing(tmp_path: Path) -> None:

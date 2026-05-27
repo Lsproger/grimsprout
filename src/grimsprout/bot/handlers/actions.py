@@ -97,6 +97,24 @@ async def _execute_action(payload: dict, *, cfg: AppConfig, db: AsyncIOMotorData
     return sha
 
 
+async def _execute_note(payload: dict, *, cfg: AppConfig, db: AsyncIOMotorDatabase) -> str:
+    """Append a free-text note to the plant changelog and commit. Returns commit SHA."""
+    repo_path = cfg.repository.require_local_path()
+    path = repo_path / f"{payload['plant_id']}.md"
+    changelog.append_entry(path, date.fromisoformat(payload["new_value"]), payload["note_text"])
+    git_service.add(repo_path, [path])
+    sha = git_service.commit(repo_path, payload["commit_msg"])
+    await audit_svc.record(
+        db,
+        tg_id=payload["tg_id"],
+        action="note",
+        payload={"plant_id": payload["plant_id"]},
+        file=f"{payload['plant_id']}.md",
+        commit_sha=sha,
+    )
+    return sha
+
+
 async def _apply_action(
     message: Message,
     command: CommandObject,
@@ -176,7 +194,10 @@ async def confirm_callback(
     await state.clear()
 
     try:
-        sha = await _execute_action(payload, cfg=cfg, db=db)
+        if payload.get("action") == "note":
+            sha = await _execute_note(payload, cfg=cfg, db=db)
+        else:
+            sha = await _execute_action(payload, cfg=cfg, db=db)
     except DirtyRepoError as exc:
         logger.warning("dirty repo blocked action: {}", exc)
         await audit_svc.record(
@@ -195,11 +216,16 @@ async def confirm_callback(
         await callback.message.edit_text(f"Ритуал прерван: <code>{exc}</code>")
         return
 
-    await callback.message.edit_text(
-        f"✅ <code>{payload['plant_id']}</code>: {payload['action_text']}\n"
-        f"Поле <code>{payload['field']}</code> = <code>{payload['new_value']}</code>\n"
-        f"Коммит: <code>{sha[:10]}</code>"
-    )
+    if payload.get("action") == "note":
+        await callback.message.edit_text(
+            f"📝 <code>{payload['plant_id']}</code>: заметка добавлена.\nКоммит: <code>{sha[:10]}</code>"
+        )
+    else:
+        await callback.message.edit_text(
+            f"✅ <code>{payload['plant_id']}</code>: {payload['action_text']}\n"
+            f"Поле <code>{payload['field']}</code> = <code>{payload['new_value']}</code>\n"
+            f"Коммит: <code>{sha[:10]}</code>"
+        )
 
 
 @router.message(Command("water"))
@@ -242,6 +268,68 @@ async def cmd_repot(
     **_: object,
 ) -> None:
     await _apply_action(message, command, action="repot", cfg=cfg, db=db, user=user, state=state)
+
+
+@router.message(Command("note"))
+@requires_role("editor")
+async def cmd_note(
+    message: Message,
+    command: CommandObject,
+    cfg: AppConfig,
+    db: AsyncIOMotorDatabase,
+    user: User,
+    state: FSMContext,
+    **_: object,
+) -> None:
+    note_text = (command.args or "").strip()
+    if not note_text:
+        await message.answer("Укажи текст заметки: <code>/note &lt;текст&gt;</code>")
+        return
+
+    sess = await sessions_repo.get(db, user.tg_id)
+    if not sess or not sess.current_plant_id:
+        await message.answer("Сначала выбери растение через /plants.")
+        return
+
+    plant_id = sess.current_plant_id
+    path = cfg.repository.require_local_path() / f"{plant_id}.md"
+    if not path.exists():
+        await message.answer(f"Файл карточки <code>{plant_id}.md</code> не найден.")
+        return
+
+    today = date.today()
+    payload = {
+        "plant_id": plant_id,
+        "action": "note",
+        "note_text": note_text,
+        "new_value": today.isoformat(),
+        "commit_msg": f"chore(auto): note {plant_id}\n\n{note_text}\nGrimSprout: tg_id={user.tg_id}",
+        "tg_id": user.tg_id,
+    }
+
+    if cfg.repository.confirm_commits:
+        await state.set_state(ActionConfirmFSM.waiting)
+        await state.update_data(pending=payload)
+        await message.answer(
+            f"⏳ Подтвердить заметку?\n🌿 Растение: <code>{plant_id}</code>\n📋 {note_text}",
+            reply_markup=confirm_keyboard(),
+        )
+        return
+
+    try:
+        sha = await _execute_note(payload, cfg=cfg, db=db)
+    except DirtyRepoError as exc:
+        logger.warning("dirty repo blocked note: {}", exc)
+        await message.answer(
+            f"🪦 Склеп в беспорядке: в репозитории есть посторонние правки.\nПодробности: <code>{exc}</code>"
+        )
+        return
+    except GrimSproutError as exc:
+        logger.exception("note failed")
+        await message.answer(f"Ритуал прерван: <code>{exc}</code>")
+        return
+
+    await message.answer(f"📝 <code>{plant_id}</code>: заметка добавлена.\nКоммит: <code>{sha[:10]}</code>")
 
 
 def register(dp: Dispatcher) -> None:

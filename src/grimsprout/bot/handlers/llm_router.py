@@ -204,16 +204,19 @@ async def _apply_intent(
         md_parser.update_yaml(path, {"tags": new_tags})
         changes.append(f"🏷 Теги: {', '.join(new_tags)}")
 
-    # 4. Changelog entry
-    if intent.changelog_entry:
-        changelog.append_entry(path, today, intent.changelog_entry)
+    # 4. Changelog entry — for "observe" always write something to avoid empty commit
+    entry_text = intent.changelog_entry
+    if entry_text is None and intent.action == "observe":
+        entry_text = "Наблюдение зафиксировано."
+    if entry_text:
+        changelog.append_entry(path, today, entry_text)
 
     # 5. Git commit
     git_service.add(repo_path, [path])
     sha = git_service.commit(
         repo_path,
         f"chore(auto): {intent.action} {plant_id}\n\n"
-        f"{intent.changelog_entry or intent.action}\n"
+        f"{entry_text or intent.action}\n"
         f"GrimSprout: tg_id={user.tg_id}, llm={cfg.llm.model}",
     )
 
@@ -344,6 +347,10 @@ async def handle_free_text(
     if not path.exists():
         await message.answer(f"Файл карточки <code>{plant_id}.md</code> не найден.")
         return
+
+    # For observations use the original user text verbatim — no LLM paraphrasing
+    if intent.action == "observe":
+        intent = intent.model_copy(update={"changelog_entry": text})
 
     # 005: confirm gate for LLM-mutating actions
     if cfg.repository.confirm_commits and intent.action in _LLM_CONFIRM_ACTIONS:
