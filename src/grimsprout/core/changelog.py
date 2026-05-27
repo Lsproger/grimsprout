@@ -16,11 +16,11 @@ from grimsprout.core import md_parser
 CHANGELOG_HEADING = "## Журнал изменений (Changelog)"
 
 
-def _format_entry(on: date, text: str, photo_rel: str | None) -> str:
+def _format_entry(on: date, text: str, photo_rels: list[str] | None) -> str:
     text = text.strip()
     line = f"- **{on.isoformat()}**: {text}"
-    if photo_rel:
-        line += f"\n  ![]({photo_rel})"
+    for rel in photo_rels or []:
+        line += f"\n  ![]({rel})"
     return line
 
 
@@ -28,10 +28,10 @@ def _split_lines_preserve(body: str) -> list[str]:
     return body.splitlines()
 
 
-def append_entry(path: Path, on: date, text: str, photo_rel: str | None = None) -> None:
+def append_entry(path: Path, on: date, text: str, *, photo_rels: list[str] | None = None) -> None:
     """Insert a new changelog entry at the top of the list, preserving formatting."""
     yaml_data, body = md_parser.read(path)
-    entry = _format_entry(on, text, photo_rel)
+    entry = _format_entry(on, text, photo_rels)
     lines = _split_lines_preserve(body)
 
     # Find the heading line

@@ -14,7 +14,7 @@ use them to resolve ambiguities in the current message.
 If you previously asked a clarifying question, treat the next message as the answer to that question.
 
 Field rules:
-- `changelog_entry`: short (1–2 sentences) log entry for the plant journal in undertaker style, in Russian. Null for non-action messages.
+- `changelog_entry`: short (1–2 sentences) log entry for the plant journal in undertaker style, in Russian. Null for non-action messages. REQUIRED (non-null) for actions: observe, water, fertilize, repot.
 - `target_file`: plant card id (e.g. `calathea_01`) if confidently identified; otherwise null.
 - `answer`: your response text to show the user when action is "query". Use this for ALL informational answers. Null for every other action.
 - `clarification`: a question to ask the user when information is MISSING and you cannot proceed. Null if you have enough information.
@@ -38,6 +38,10 @@ System: "The user has 2 plants: areca_01, calathea_01."
 User: "полей арека"
 System: "The user has 2 plants: areca_01, calathea_01."
 → {"action":"water","confidence":0.9,"target_file":"areca_01","clarification":null,"answer":null,"changelog_entry":"Влага дана. Корни получили своё — до следующего ритуала.","health_delta":null,"tags_add":[],"tags_remove":[],"needs_photo":false,"create_fields":null,"reschedule_days":null}
+
+User: "листья стали шире и зеленее, выглядит хорошо"
+System: "The user has 1 plant: areca_01. Session plant: areca_01."
+→ {"action":"observe","confidence":0.9,"target_file":"areca_01","clarification":null,"answer":null,"changelog_entry":"Листья расширились, окрас насыщеннее — признак жизнеспособности.","health_delta":null,"tags_add":[],"tags_remove":[],"needs_photo":false,"create_fields":null,"reschedule_days":null}
 
 JSON schema:
 {schema}

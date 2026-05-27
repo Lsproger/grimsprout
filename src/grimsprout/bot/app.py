@@ -33,6 +33,7 @@ BOT_COMMANDS = [
     BotCommand(command="water", description="Зафиксировать полив"),
     BotCommand(command="fertilize", description="Зафиксировать удобрение"),
     BotCommand(command="repot", description="Зафиксировать пересадку"),
+    BotCommand(command="note", description="Добавить заметку к растению"),
     BotCommand(command="edit", description="Редактировать поле карточки"),
     BotCommand(command="new", description="Новое растение"),
     BotCommand(command="push", description="Отправить ветку бота в remote"),
