@@ -42,37 +42,37 @@
 - [x] Confirm gate — запрос подтверждения перед мутацией (`phase3-005`)
 - [x] Confidence threshold — порог уверенности LLM (`phase3-006`)
 
-## Фаза 4 — Полировка и расширения 🔜
+## Фаза 4 — Полировка и расширения �
 - [x] `/info` — просмотр карточки растения (YAML + последние changelog)
 - [x] `/edit` — редактирование полей карточки (quick mode + interactive FSM, 12 полей)
 - [x] `/new` — FSM-создание новой карточки
-- [x] LLM performance stats — логирование `tokens_per_sec` / `eval_count` в INFO; флаг `llm.show_perf_stats` для вывода футера `⚡ N tok/s · M tok` в ответах бота
-- [ ] Обработка edge-cases: LLM не вернула JSON, git lock timeout
-- [ ] Фирменная «загробная» стилистика ответов
+- [x] LLM performance stats — логирование `tokens_per_sec` / `eval_count` в INFO; флаг `llm.show_perf_stats` для вывода футера `⚡ N tok/s · M tok` в ответах бота (`phase4-004`)
+- [ ] Обработка edge-cases: LLM не вернула JSON, git lock timeout (`phase4-005`)
+- [ ] Фирменная «загробная» стилистика ответов (`phase4-006`)
 
 ## Фаза 5 — Gemini Bridge (внешний агент → GrimSprout)
 Пользователь ведёт глубокий анализ в Gemini (с доступом к репозиторию `trava`),
 затем передаёт результат в бот для применения к карточкам / changelog / задачам.
 
-- [ ] Принять структурированный вывод Gemini (JSON или Markdown) через Telegram-сообщение
-- [ ] Разбор payload: определить тип операции (обновление карточки / запись в changelog / задача)
-- [ ] Применить изменения через существующий Action dispatch (phase3-003)
-- [ ] Подтверждение перед записью (через существующий confirm gate)
+- [ ] Принять структурированный вывод Gemini (JSON или Markdown) через Telegram-сообщение (`phase5-001`)
+- [ ] Разбор payload: определить тип операции (обновление карточки / запись в changelog / задача) (`phase5-001`)
+- [ ] Применить изменения через существующий Action dispatch (`phase5-002`)
+- [ ] Подтверждение перед записью через существующий confirm gate (`phase5-002`)
 - [ ] Опционально: webhook / Telegram-пересылка как триггер (без Telegram-интеграции на стороне Gemini)
 
 > **Зависимости:** Фаза 4 (команды `/edit`, `/info`)
 > **Не входит в MVP**
 
 ## Фаза 6 — Планировщик напоминаний
-- [ ] `scheduler_service.py` — APScheduler + MongoDB jobstore, напоминания о поливе/удобрении/пересадке
-- [ ] `/schedule [plant_id] <kind> <interval_days>` — создать/обновить расписание
-- [ ] `/snooze [plant_id] [kind]` — отложить на `default_snooze_days`
+- [ ] `scheduler_service.py` — APScheduler + MongoDB jobstore, напоминания о поливе/удобрении/пересадке (`phase6-001`)
+- [ ] `/schedule [plant_id] <kind> <interval_days>` — создать/обновить расписание (`phase6-002`)
+- [ ] `/snooze [plant_id] [kind]` — отложить на `default_snooze_days` (`phase6-002`)
 
 > **Зависимости:** Фаза 4 + Фаза 5 (Gemini Bridge)
 
 ## Фаза 7 — PhotoAnalyzer (post-MVP)
-- [ ] LLM vision — описание фото растения по снимку
-- [ ] Автоматическое добавление описания в changelog при загрузке фото
-- [ ] Определение заболеваний / состояния листьев
+- [ ] LLM vision — описание фото растения по снимку (`phase7-001`)
+- [ ] Автоматическое добавление описания в changelog при загрузке фото (`phase7-001`)
+- [ ] Определение заболеваний / состояния листьев (`phase7-001`)
 
 > **Не входит в MVP**
