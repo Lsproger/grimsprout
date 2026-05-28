@@ -60,18 +60,34 @@ class MongoConfig(BaseModel):
 class LLMConfig(BaseModel):
     provider: Literal["ollama"] = "ollama"
     base_url: str = "http://openwebui.lab.kekpuk.top:11434"
+    # legacy single-model field; used as fallback if classifier/assistant model not set
     model: str = "gemma3:4b"
+    # classifier routes user intent via tools; assistant answers free-form questions
+    classifier_model: str = ""
+    assistant_model: str = ""
     temperature: float = 1.0
     top_p: float = 0.95
     top_k: int = 64
     timeout_sec: int = 30
-    system_prompt_file: Path
-    intent_schema_file: Path
+    # legacy prompt files kept for backward compatibility
+    system_prompt_file: Path | None = None
+    intent_schema_file: Path | None = None
+    # new agent prompt files
+    classifier_prompt_file: Path | None = None
+    assistant_prompt_file: Path | None = None
     confidence_threshold: float = 0.5
     mutate_confidence_threshold: float = 0.75
     conversation_history_max_turns: int = 5  # user+assistant pairs to inject as context
     conversation_ttl_minutes: int = 30  # idle minutes before history is discarded
     show_perf_stats: bool = False  # append token/sec footer to chat replies
+
+    @property
+    def effective_classifier_model(self) -> str:
+        return self.classifier_model or self.model
+
+    @property
+    def effective_assistant_model(self) -> str:
+        return self.assistant_model or self.model
 
 
 class SchedulingConfig(BaseModel):

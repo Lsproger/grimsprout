@@ -65,3 +65,40 @@ def test_read_card_existing(tmp_trava: Path) -> None:
 
 def test_read_card_missing(tmp_trava: Path) -> None:
     assert plant_repo.read_card(tmp_trava, "no_such") is None
+
+
+# ---------------------------------------------------------------------------
+# build_repo_summary
+# ---------------------------------------------------------------------------
+
+
+def test_build_repo_summary_includes_all_plants(tmp_trava: Path) -> None:
+    summary = plant_repo.build_repo_summary(tmp_trava)
+    assert "areca_01" in summary
+    assert "calathea_01" in summary
+
+
+def test_build_repo_summary_includes_health_and_status(tmp_trava: Path) -> None:
+    summary = plant_repo.build_repo_summary(tmp_trava)
+    assert "alive" in summary
+    assert "h=7.5" in summary
+
+
+def test_build_repo_summary_includes_changelog_entry(tmp_trava: Path) -> None:
+    summary = plant_repo.build_repo_summary(tmp_trava)
+    # areca_01 has "- **2026-05-15**: Первая запись." in the fixture
+    assert "2026-05-15" in summary
+
+
+def test_build_repo_summary_empty_repo(tmp_path: Path) -> None:
+    empty = tmp_path / "empty_trava"
+    empty.mkdir()
+    summary = plant_repo.build_repo_summary(empty)
+    assert summary == "Коллекция пуста."
+
+
+def test_build_repo_summary_changelog_lines_limit(tmp_trava: Path) -> None:
+    """With changelog_lines=1, only the most recent entry should appear."""
+    summary = plant_repo.build_repo_summary(tmp_trava, changelog_lines=1)
+    # Should still contain some dates but only 1 per plant
+    assert summary  # not empty

@@ -42,7 +42,7 @@
 - [x] Confirm gate — запрос подтверждения перед мутацией (`phase3-005`)
 - [x] Confidence threshold — порог уверенности LLM (`phase3-006`)
 
-## Фаза 4 — Полировка и расширения �
+## Фаза 4 — Полировка и расширения ✅
 - [x] `/info` — просмотр карточки растения (YAML + последние changelog)
 - [x] `/edit` — редактирование полей карточки (quick mode + interactive FSM, 12 полей)
 - [x] `/new` — FSM-создание новой карточки
@@ -50,6 +50,19 @@
 - [ ] Обработка edge-cases: LLM не вернула JSON, git lock timeout (`phase4-005`)
 - [ ] Фирменная «загробная» стилистика ответов (`phase4-006`)
 
+## Фаза 4.5 — Переход на tool calling ✅
+- [x] `ollama>=0.3` — замена httpx-клиента на python-ollama (`phase45-001`)
+- [x] Разбивка на два агента: **Classifier** (tool calls) + **Assistant** (свободный текст) (`phase45-001`)
+- [x] `build_repo_summary()` — сводка коллекции инжектируется в системный промпт → устраняет «слепоту» к растениям (`phase45-003`)
+- [x] 6 инструментов: `water`, `fertilize`, `repot`, `observe`, `get_plant_details`, `create_plant` (`phase45-004`)
+- [x] `tool_executor.py` — диспатчер вызовов инструментов, read-only vs mutating (`phase45-005`)
+- [x] Новые системные промпты: `system_classifier.md`, `system_assistant.md` (`phase45-006`)
+- [x] `PendingMutation` / `AgentResult` — заменяют `Intent` / `intent_parser.py` (`phase45-007`)
+- [x] `agent.py` — оркестровка: Classifier → tool_calls → диспатч → `AgentResult` (`phase45-008`)
+- [x] `llm_router.py` — перепривязан к новому агенту, FSM хранит `pending_mutations` (`phase45-009`)
+- [x] Батч-действия: «Полил все растения» → `plant_ids=["all"]` → все растения (`phase45-004`)
+
+> **Зависит от:** Фаза 4
 ## Фаза 5 — Gemini Bridge (внешний агент → GrimSprout)
 Пользователь ведёт глубокий анализ в Gemini (с доступом к репозиторию `trava`),
 затем передаёт результат в бот для применения к карточкам / changelog / задачам.

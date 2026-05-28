@@ -55,17 +55,21 @@ mongo:
 llm:
   # Общие поля
   provider: "ollama"
+  base_url: "http://localhost:11434"
+  model: "gemma4-low:latest"        # fallback если classifier_model / assistant_model пусты
+  classifier_model: ""              # модель для Classifier (tool calling); пусто → model
+  assistant_model: ""               # модель для Assistant (free-form); пусто → model
   temperature: 0.1
+  top_p: 0.95
+  top_k: 64
   timeout_sec: 30
-  system_prompt_file: "config/prompts/system_undertaker.md"
-  intent_schema_file: "config/prompts/intent_schema.json"
-  show_perf_stats: false  # если true — добавляет "⚡ N tok/s · M tok" к ответам бота
-  local:
-    base_url: "http://localhost:11434"
-    model: "llama3"
-  prod:
-    base_url: "http://ollama.yourdomain.com:11434"
-    model: "llama3"
+  system_prompt_file: null          # устарело (Фаза 3); оставлено для обратной совместимости
+  intent_schema_file: null          # устарело (Фаза 3)
+  classifier_prompt_file: "config/prompts/system_classifier.md"
+  assistant_prompt_file: "config/prompts/system_assistant.md"
+  show_perf_stats: false            # если true — добавляет "⚡ N tok/s · M tok" к ответам бота
+  conversation_history_max_turns: 10
+  conversation_ttl_minutes: 60
 
 scheduling:
   timezone: "Europe/Warsaw"          # нет профилей — плоская секция

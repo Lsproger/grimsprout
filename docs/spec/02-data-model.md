@@ -118,3 +118,39 @@ tags: [string]
 
 ### APScheduler jobstore
 - Использует ту же MongoDB, отдельная коллекция (`apscheduler_jobs`).
+
+## 2.6. LLM-модели агентного цикла
+
+Используются в `src/grimsprout/services/llm/tool_call.py`.  
+Заменили `Intent` / `intent_parser.py` начиная с Фазы 4.5.
+
+### `PendingMutation`
+Одна мутирующая операция, одобренная агентом, но ещё не применённая к git.
+
+```python
+@dataclass
+class PendingMutation:
+    tool_name: str        # "water" | "fertilize" | "repot" | "observe"
+    args: dict[str, Any]  # аргументы tool call (plant_ids или plant_id + note)
+```
+
+Сериализуется в FSM-состояние aiogram как обычный dict: `{"tool_name": ..., "args": {...}}`.
+
+### `AgentResult`
+Результат одного полного прохода `agent.run()`.
+
+```python
+@dataclass
+class AgentResult:
+    final_reply: str                          # текст для отправки пользователю
+    llm_stats: LLMStats                       # статистика производительности
+    needs_confirmation: bool = False          # если True — показать превью + кнопки
+    pending_mutations: list[PendingMutation]  # непустой только при needs_confirmation=True
+
+    def pending_plant_ids(self) -> list[str]: ...  # все ID через pending_mutations
+```
+
+Инварианты:
+- `needs_confirmation=False` → `pending_mutations == []`; `final_reply` — готовый ответ пользователю.
+- `needs_confirmation=True` → `pending_mutations` непуст; `final_reply` — текст превью с кнопками подтверждения.
+
