@@ -42,8 +42,12 @@ llm:
   top_p: 0.95
   top_k: 64
   timeout_sec: 30
+  # Legacy fields (kept for reference)
   system_prompt_file: "config/prompts/system_undertaker.md"
   intent_schema_file: "config/prompts/intent_schema.json"
+  # Phase 4.5: Agent prompts
+  classifier_prompt_file: "config/prompts/system_classifier.md"
+  assistant_prompt_file: "config/prompts/system_assistant.md"
   confidence_threshold: 0.5       # observe/query/unknown
   mutate_confidence_threshold: 0.75 # water/fertilize/repot
   conversation_history_max_turns: 5   # keep last 5 user+assistant pairs in context
@@ -51,10 +55,14 @@ llm:
   show_perf_stats: true
   local:
     base_url: "http://localhost:11434"
-    model: "llama3"
+    model: "qwen2.5:7b"
+    classifier_model: "qwen2.5:7b"
+    assistant_model: "qwen2.5:7b"
   prod:
     base_url: "http://ollama.yourdomain.com:11434"
-    model: "llama3"
+    model: "qwen2.5:7b"
+    classifier_model: "qwen2.5:7b"
+    assistant_model: "qwen2.5:7b"
 
 scheduling:
   timezone: "Europe/Warsaw"

@@ -51,8 +51,12 @@ llm:
   conversation_history_max_turns: 5   # keep last 5 user+assistant pairs in context
   conversation_ttl_minutes: 30        # discard history after 30 min of inactivity
   show_perf_stats: true
-  model: "gemma4:e4b"
+  model: "gemma4-low:latest"
+  classifier_model: ""
+  assistant_model: ""
   base_url: "http://openwebui.lab.kekpuk.top:11434"
+  classifier_prompt_file: "config/prompts/system_classifier.md"
+  assistant_prompt_file: "config/prompts/system_assistant.md"
  
 
 scheduling:

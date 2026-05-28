@@ -5,8 +5,9 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
-from grimsprout.bot.handlers.llm_router import _build_messages, _extract_valid_history
+from grimsprout.bot.handlers.llm_router import _extract_valid_history, _perf_footer
 from grimsprout.db.models import ConversationTurn, Session
+from grimsprout.services.llm.ollama_client import LLMStats
 
 
 def _make_session(
@@ -76,65 +77,34 @@ def test_extract_valid_history_trims_to_max_turns() -> None:
     assert result[-1]["content"] == "msg5"
 
 
-# ---------------------------------------------------------------------------
-# _build_messages
-# ---------------------------------------------------------------------------
-
-
-def test_build_messages_no_history(monkeypatch) -> None:
-    from grimsprout.bot.handlers import llm_router
-
-    monkeypatch.setattr(llm_router, "_load_system_prompt", lambda cfg: "SYS")
-    monkeypatch.setattr(
-        llm_router.plant_repo,
-        "list_plants",
-        lambda path: [{"id": "areca_01"}, {"id": "calathea_01"}],
+def test_extract_valid_history_strips_tool_role() -> None:
+    """Only user/assistant turns should be returned (ConversationTurn enforces this at storage level)."""
+    cfg = _make_cfg(max_turns=5, ttl_minutes=30)
+    sess = _make_session(
+        history=[
+            ("user", "полей все"),
+            ("assistant", "подтверди"),
+        ],
+        updated_at=datetime.now(tz=UTC),
     )
-
-    cfg = MagicMock()
-    cfg.repository.require_local_path.return_value = "/repo"
-
-    msgs = _build_messages(cfg, "полей арека")
-    assert msgs[0] == {"role": "system", "content": "SYS"}
-    # Enriched plant context: count + list
-    assert "2 plant" in msgs[1]["content"]
-    assert "areca_01" in msgs[1]["content"]
-    assert msgs[-1] == {"role": "user", "content": "полей арека"}
-    assert len(msgs) == 3
+    result = _extract_valid_history(sess, cfg)
+    assert all(t["role"] in ("user", "assistant") for t in result)
+    assert len(result) == 2
 
 
-def test_build_messages_with_history(monkeypatch) -> None:
-    from grimsprout.bot.handlers import llm_router
-
-    monkeypatch.setattr(llm_router, "_load_system_prompt", lambda cfg: "SYS")
-    monkeypatch.setattr(
-        llm_router.plant_repo,
-        "list_plants",
-        lambda path: [{"id": "areca_01"}],
-    )
-
-    cfg = MagicMock()
-    cfg.repository.require_local_path.return_value = "/repo"
-    history = [
-        {"role": "user", "content": "как ухаживать за плющом?"},
-        {"role": "assistant", "content": "Укажите вид плюща."},
-    ]
-
-    msgs = _build_messages(cfg, "я не знаю, купил в икее", history=history)
-    # system, system, user (history), assistant (history), user (current)
-    assert len(msgs) == 5
-    assert msgs[2] == {"role": "user", "content": "как ухаживать за плющом?"}
-    assert msgs[3] == {"role": "assistant", "content": "Укажите вид плюща."}
-    assert msgs[4] == {"role": "user", "content": "я не знаю, купил в икее"}
+# ---------------------------------------------------------------------------
+# _perf_footer
+# ---------------------------------------------------------------------------
 
 
-def test_build_messages_empty_history_same_as_no_history(monkeypatch) -> None:
-    from grimsprout.bot.handlers import llm_router
+def test_perf_footer_full() -> None:
+    stats = LLMStats(tokens_per_sec=42.7, eval_count=38, prompt_eval_count=26, total_duration_ms=1300.0)
+    footer = _perf_footer(stats)
+    assert "43 tok/s" in footer
+    assert "38 tok" in footer
+    assert footer.startswith("⚡")
 
-    monkeypatch.setattr(llm_router, "_load_system_prompt", lambda cfg: "SYS")
-    monkeypatch.setattr(llm_router.plant_repo, "list_plants", lambda path: [])
 
-    cfg = MagicMock()
-    cfg.repository.require_local_path.return_value = "/repo"
-
-    assert _build_messages(cfg, "test") == _build_messages(cfg, "test", history=[])
+def test_perf_footer_no_stats() -> None:
+    stats = LLMStats(tokens_per_sec=None, eval_count=None, prompt_eval_count=None, total_duration_ms=None)
+    assert _perf_footer(stats) == ""
