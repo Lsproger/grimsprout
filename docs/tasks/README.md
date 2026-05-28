@@ -13,3 +13,8 @@
 
 ## Связь с планом
 Сводка по фазам — в [../plan.md](../plan.md).
+
+## Фаза 4.5 — Переход на tool calling
+| Файл | Статус | Описание |
+|---|---|---|
+| [phase45-001-tool-calling-migration.md](phase45-001-tool-calling-migration.md) | done | Полная миграция с JSON-интента на tool calling |

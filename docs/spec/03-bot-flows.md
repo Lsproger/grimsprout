@@ -24,21 +24,27 @@ sequenceDiagram
     User->>Bot: фото + "Калатея сохнет, появились пятна"
     Bot->>Auth: проверка роли
     Auth-->>Bot: editor (ok)
-    Bot->>LLM: text + system prompt
-    LLM-->>Bot: JSON {target_file: calathea_01, action: observe, changelog_entry, ...}
-    Bot->>PlantRepo: resolve(target_file)
-    PlantRepo-->>Bot: путь файла
+    Bot->>Agent: run(text, history)
+    Agent->>Ollama: chat_with_tools(classifier_model, msgs, TOOL_DEFS)<br/>system содержит repo_summary со всеми ID
+    Ollama-->>Agent: tool_call observe(plant_id=calathea_01, note=...)
+    Agent->>ToolExecutor: execute_tool("observe", {plant_id, note})
+    ToolExecutor->>PlantRepo: append_changelog(note, plant_id)
+    ToolExecutor->>Git: add + commit("chore(auto): observe calathea_01")
+    Git-->>ToolExecutor: commit_sha
+    ToolExecutor->>Audit: log(action=observe)
+    ToolExecutor-->>Agent: "✅ Наблюдение записано"
+    Agent-->>Bot: AgentResult(final_reply, needs_confirmation=False)
     Bot->>PhotoStorage: save(file_id, plant_id)
     PhotoStorage-->>Bot: images/calathea_01_<ts>.jpg
-    Bot->>PlantRepo: append_changelog(text, photo_rel)
-    Bot->>PlantRepo: update_yaml(health_delta, tags)
-    Bot->>Git: add + commit("chore(auto): observe calathea_01")
-    Git-->>Bot: commit_sha
-    Bot->>Audit: log(action=observe)
     Bot-->>User: стилизованный отчёт
 ```
 
-## 3.3. Сценарий: создание карточки (FSM)
+> Фото обрабатывается отдельным handler'ом поверх результата агента.  
+> Если `confirm_commits=true` — агент вернёт `needs_confirmation=True`; Bot покажет превью с кнопкой «Подтвердить» перед коммитом.
+
+## 3.3. Сценарий: создание карточки
+
+**Вариант 1 — Прямая команда `/new` (FSM)**
 
 ```mermaid
 sequenceDiagram
@@ -55,7 +61,22 @@ sequenceDiagram
     Bot-->>User: "Карточка paporotnik_02 высечена в склепе"
 ```
 
-Быстрый путь: одним сообщением `создай папоротник нефролепис, куплен в Леруа` → LLM возвращает `action=create` + поля → бот показывает preview YAML → кнопки `Записать / Отмена`.
+**Вариант 2 — Свободный текст через агент**
+
+```mermaid
+sequenceDiagram
+    autonumber
+    User->>Bot: "Купил плющ Hedera helix в Леруа"
+    Bot->>Agent: run(text, history)
+    Agent->>Ollama: chat_with_tools(classifier_model, msgs, TOOL_DEFS)
+    Ollama-->>Agent: tool_call create_plant(common_name="Плющ", botanical_name="Hedera helix")
+    Agent->>ToolExecutor: execute_tool("create_plant", {common_name, botanical_name})
+    ToolExecutor-->>Agent: "🌱 Используй /new чтобы создать карточку для Плюща"
+    Agent-->>Bot: AgentResult(final_reply="...", needs_confirmation=False)
+    Bot-->>User: "🌱 Используй /new чтобы создать карточку для Плюща"
+```
+
+> `create_plant` — read-only инструмент: реальная запись карточки происходит только через FSM `/new`.
 
 ## 3.4. Сценарий: напоминание и регрессия
 
