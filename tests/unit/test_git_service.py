@@ -127,8 +127,9 @@ def test_push_to_bare_remote(tmp_git_repo: Path, bare_remote: Path) -> None:
 
     git_service.push(tmp_git_repo, "origin", work_branch)
 
-    bare = git.Repo(bare_remote)
-    pushed_sha = bare.git.rev_parse(work_branch)
+    # Use ls-remote from the non-bare repo to avoid safe.bareRepository restriction
+    output = repo.git.ls_remote("origin", work_branch)
+    pushed_sha = output.split()[0]
     assert pushed_sha == sha
 
 
