@@ -1,4 +1,4 @@
-aiogram>=3.5,<4
+aiogram>=3.28.2,<4
 gitpython>=3.1.50
 pyyaml>=6.0.3
 python-frontmatter>=1.1
