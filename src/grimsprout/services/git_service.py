@@ -9,6 +9,7 @@ Design notes:
 
 from __future__ import annotations
 
+import re
 import time
 from pathlib import Path
 
@@ -19,6 +20,17 @@ from grimsprout.utils.errors import DirtyRepoError, GrimSproutError
 
 class GitError(GrimSproutError):
     pass
+
+
+BOT_COMMIT_MARKER = "GrimSprout: tg_id="
+
+
+def _to_text(value: object) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return bytes(value).decode("utf-8", errors="replace")
+    return str(value)
 
 
 def _wait_lock(repo_path: Path, timeout: float = 2.0) -> None:
@@ -131,3 +143,72 @@ def push(repo_path: Path, remote: str, branch: str, token: str = "") -> None:
     for r in results:
         if r.flags & r.ERROR:
             raise GitError(f"push rejected for {r.local_ref}: {r.summary}")
+
+
+def find_commit_by_short_sha(
+    repo_path: Path,
+    short_sha: str,
+    branch: str,
+    *,
+    max_count: int | None = None,
+    marker: str | None = None,
+) -> git.Commit:
+    """Find a unique commit in ``branch`` by SHA prefix.
+
+    If ``marker`` is set, only commits containing that marker in the message
+    are considered.
+    """
+    query = short_sha.strip().lower()
+    if not query:
+        raise GitError("empty short sha")
+    if not re.fullmatch(r"[0-9a-f]+", query):
+        raise GitError(f"invalid short sha: {short_sha}")
+
+    _wait_lock(repo_path)
+    repo = _open(repo_path)
+    try:
+        commits = list(repo.iter_commits(branch, max_count=max_count))
+    except git.GitCommandError as exc:
+        raise GitError(f"cannot read branch '{branch}': {exc.stderr or exc}") from exc
+
+    matches: list[git.Commit] = []
+    for commit in commits:
+        commit_message = _to_text(commit.message)
+        if marker and marker not in commit_message:
+            continue
+        if commit.hexsha.startswith(query):
+            matches.append(commit)
+
+    if not matches:
+        raise GitError(f"commit not found for short sha: {short_sha}")
+    if len(matches) > 1:
+        choices = ", ".join(c.hexsha[:10] for c in matches[:5])
+        raise GitError(f"ambiguous short sha '{short_sha}', matches: {choices}")
+    return matches[0]
+
+
+def revert_commit(repo_path: Path, commit_sha: str) -> str:
+    """Revert a commit and return the new revert commit SHA."""
+    _wait_lock(repo_path)
+    repo = _open(repo_path)
+    _assert_clean_outside(repo, allowed=set())
+
+    try:
+        commit = repo.commit(commit_sha)
+    except Exception as exc:
+        raise GitError(f"cannot resolve commit: {commit_sha}") from exc
+
+    if len(commit.parents) > 1:
+        raise GitError("revert for merge commits is not supported")
+
+    try:
+        repo.git.revert(commit.hexsha, no_edit=True)
+    except git.GitCommandError as exc:
+        # Best effort cleanup when revert stops on conflicts.
+        try:
+            repo.git.revert("--abort")
+        except Exception:
+            pass
+        raise GitError(f"git revert failed: {exc.stderr or exc}") from exc
+
+    return repo.head.commit.hexsha

@@ -46,6 +46,7 @@
 - [x] `/info` — просмотр карточки растения (YAML + последние changelog)
 - [x] `/edit` — редактирование полей карточки (quick mode + interactive FSM, 12 полей)
 - [x] `/new` — FSM-создание новой карточки
+- [x] `/revert` — безопасный откат bot-коммита по короткому SHA с `git revert`, confirm-flow и admin hard mode (`phase4-007`)
 - [x] LLM performance stats — логирование `tokens_per_sec` / `eval_count` в INFO; флаг `llm.show_perf_stats` для вывода футера `⚡ N tok/s · M tok` в ответах бота (`phase4-004`)
 - [ ] Обработка edge-cases: LLM не вернула JSON, git lock timeout (`phase4-005`)
 - [ ] Фирменная «загробная» стилистика ответов (`phase4-006`)

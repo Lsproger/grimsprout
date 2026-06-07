@@ -17,6 +17,7 @@ from grimsprout.bot.handlers import git as git_handlers
 from grimsprout.bot.handlers import info as info_handlers
 from grimsprout.bot.handlers import new_card as new_card_handlers
 from grimsprout.bot.handlers import photo as photo_handlers
+from grimsprout.bot.handlers import revert as revert_handlers
 from grimsprout.bot.middlewares.auth import AuthMiddleware
 from grimsprout.config import load_config
 from grimsprout.db.client import get_db, init_indexes
@@ -38,6 +39,7 @@ BOT_COMMANDS = [
     BotCommand(command="new", description="Новое растение"),
     BotCommand(command="push", description="Отправить ветку бота в remote"),
     BotCommand(command="pr", description="Открыть PR в базовую ветку"),
+    BotCommand(command="revert", description="Откатить коммит по короткому SHA"),
 ]
 
 
@@ -78,6 +80,7 @@ async def run() -> None:
     admin.register(dp)
     git_handlers.register(dp)
     photo_handlers.register(dp)
+    revert_handlers.register(dp)
     llm_router.register(dp)  # LAST: catch-all for free text
 
     me = await bot.get_me()

@@ -11,6 +11,23 @@ from grimsprout.services import git_service
 from grimsprout.services.git_service import GitError
 from grimsprout.utils.errors import DirtyRepoError
 
+
+def _append_commit(repo_path: Path, rel_path: str, content: str, message: str) -> str:
+    repo = git.Repo(repo_path)
+    path = repo_path / rel_path
+    path.write_text(content, encoding="utf-8")
+    repo.index.add([rel_path])
+    return repo.index.commit(message).hexsha
+
+
+def _to_text(value: object) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, (bytes, bytearray, memoryview)):
+        return bytes(value).decode("utf-8", errors="replace")
+    return str(value)
+
+
 # ---- add ----------------------------------------------------------------------------
 
 
@@ -89,7 +106,7 @@ def test_commit_with_staged_paths_returns_sha(tmp_git_repo: Path) -> None:
     assert isinstance(sha, str) and len(sha) == 40
     repo = git.Repo(tmp_git_repo)
     assert repo.head.commit.hexsha == sha
-    assert repo.head.commit.message.startswith("chore(auto): water x")
+    assert _to_text(repo.head.commit.message).startswith("chore(auto): water x")
 
 
 def test_commit_empty_index_raises(tmp_git_repo: Path) -> None:
@@ -136,3 +153,107 @@ def test_push_to_bare_remote(tmp_git_repo: Path, bare_remote: Path) -> None:
 def test_push_unknown_remote_raises(tmp_git_repo: Path) -> None:
     with pytest.raises(GitError):
         git_service.push(tmp_git_repo, "origin", "master")
+
+
+def test_find_commit_by_short_sha_returns_unique_commit(tmp_git_repo: Path) -> None:
+    sha = _append_commit(
+        tmp_git_repo,
+        "plant.md",
+        "a",
+        "chore(auto): photo x\n\nФото\nGrimSprout: tg_id=1",
+    )
+
+    commit = git_service.find_commit_by_short_sha(
+        tmp_git_repo,
+        sha[:10],
+        "master",
+        marker=git_service.BOT_COMMIT_MARKER,
+    )
+
+    assert commit.hexsha == sha
+
+
+def test_find_commit_by_short_sha_not_found_raises(tmp_git_repo: Path) -> None:
+    with pytest.raises(GitError):
+        git_service.find_commit_by_short_sha(tmp_git_repo, "abcdef1", "master")
+
+
+def test_find_commit_by_short_sha_ambiguous_raises(tmp_git_repo: Path) -> None:
+    # Generate enough commits so at least two share the first hex char.
+    commits: list[str] = []
+    for i in range(20):
+        commits.append(
+            _append_commit(
+                tmp_git_repo,
+                f"file_{i}.md",
+                f"{i}",
+                f"chore(auto): note p{i}\n\ntext\nGrimSprout: tg_id=1",
+            )
+        )
+
+    buckets: dict[str, int] = {}
+    duplicate_prefix = ""
+    for sha in commits:
+        prefix = sha[:1]
+        buckets[prefix] = buckets.get(prefix, 0) + 1
+        if buckets[prefix] > 1:
+            duplicate_prefix = prefix
+            break
+    assert duplicate_prefix
+
+    with pytest.raises(GitError):
+        git_service.find_commit_by_short_sha(tmp_git_repo, duplicate_prefix, "master")
+
+
+def test_find_commit_by_short_sha_respects_marker(tmp_git_repo: Path) -> None:
+    _append_commit(tmp_git_repo, "a.md", "a", "chore(auto): note a")
+    bot_sha = _append_commit(
+        tmp_git_repo,
+        "b.md",
+        "b",
+        "chore(auto): note b\n\ntext\nGrimSprout: tg_id=77",
+    )
+
+    commit = git_service.find_commit_by_short_sha(
+        tmp_git_repo,
+        bot_sha[:10],
+        "master",
+        marker=git_service.BOT_COMMIT_MARKER,
+    )
+
+    assert commit.hexsha == bot_sha
+
+
+def test_revert_commit_returns_new_sha_and_reverts_content(tmp_git_repo: Path) -> None:
+    first_sha = _append_commit(
+        tmp_git_repo,
+        "plant.md",
+        "one",
+        "chore(auto): note x\n\ntext\nGrimSprout: tg_id=1",
+    )
+    _append_commit(
+        tmp_git_repo,
+        "plant.md",
+        "two",
+        "chore(auto): note x\n\ntext2\nGrimSprout: tg_id=1",
+    )
+
+    new_sha = git_service.revert_commit(tmp_git_repo, "HEAD")
+
+    repo = git.Repo(tmp_git_repo)
+    assert repo.head.commit.hexsha == new_sha
+    assert (tmp_git_repo / "plant.md").read_text(encoding="utf-8") == "one"
+    assert new_sha != first_sha
+
+
+def test_revert_commit_rejects_dirty_repo(tmp_git_repo: Path) -> None:
+    _append_commit(
+        tmp_git_repo,
+        "plant.md",
+        "one",
+        "chore(auto): note x\n\ntext\nGrimSprout: tg_id=1",
+    )
+    (tmp_git_repo / "README.md").write_text("# changed\n", encoding="utf-8")
+
+    with pytest.raises(DirtyRepoError):
+        git_service.revert_commit(tmp_git_repo, "HEAD")
