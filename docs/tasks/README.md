@@ -18,3 +18,8 @@
 | Файл | Статус | Описание |
 |---|---|---|
 | [phase45-001-tool-calling-migration.md](phase45-001-tool-calling-migration.md) | done | Полная миграция с JSON-интента на tool calling |
+
+## Фаза 4 — Полировка и расширения
+| Файл | Статус | Описание |
+|---|---|---|
+| [phase4-007-revert-command.md](phase4-007-revert-command.md) | done | Команда `/revert` для безопасного отката bot-коммитов по короткому SHA |

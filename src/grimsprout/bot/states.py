@@ -25,5 +25,9 @@ class ActionConfirmFSM(StatesGroup):
     waiting_llm = State()
 
 
+class RevertFSM(StatesGroup):
+    waiting = State()
+
+
 class RegressionFSM(StatesGroup):
     waiting_for_input = State()
