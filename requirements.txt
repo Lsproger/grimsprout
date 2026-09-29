@@ -8,5 +8,5 @@ motor>=3.7.1
 apscheduler>=3.11.3
 httpx>=0.28.1
 loguru>=0.7.3
-rapidfuzz>=3.14.5
+rapidfuzz>=3.14.6
 ollama>=0.6.2
